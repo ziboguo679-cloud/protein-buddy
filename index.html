@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>蛋白质小助手 🍗</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#FF9F43">
+<!-- iOS 添加到主屏幕后：全屏运行、独立外观 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="蛋白质助手">
+<style>
+  :root {
+    --bg1: #FFF6E5;
+    --bg2: #E3F6FF;
+    --card: #FFFFFF;
+    --ink: #4A3B2A;
+    --ink-light: #9A8B77;
+    --primary: #FF9F43;
+    --primary-dark: #F0832B;
+    --teal: #26D0CE;
+    --pink: #FF6B81;
+    --green: #2ED573;
+    --shadow: 0 6px 0 rgba(74,59,42,.08), 0 12px 24px rgba(74,59,42,.10);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height:100%; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%) fixed;
+    color: var(--ink);
+    display:flex; justify-content:center;
+    padding: 16px 12px 48px;
+    min-height: 100vh;
+  }
+  #app { width:100%; max-width:480px; }
+
+  /* ---------- 顶部 ---------- */
+  header { display:flex; align-items:center; justify-content:space-between; padding: 6px 4px 14px; }
+  .logo { font-size:22px; font-weight:800; letter-spacing:.5px; }
+  .logo span { font-size:26px; margin-right:6px; }
+  .icon-btn {
+    width:42px; height:42px; border-radius:16px; border:none; cursor:pointer;
+    background:var(--card); box-shadow:var(--shadow); font-size:20px;
+    transition: transform .15s;
+  }
+  .icon-btn:active { transform: scale(.9); }
+
+  /* ---------- 卡片 ---------- */
+  .card {
+    background:var(--card); border-radius:28px; box-shadow:var(--shadow);
+    padding:20px; margin-bottom:16px;
+  }
+  .card h2 { font-size:17px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .card h2 .tag { font-size:12px; color:#fff; background:var(--teal); border-radius:999px; padding:2px 10px; font-weight:600; }
+
+  /* ---------- 进度区 ---------- */
+  .ring-row { display:flex; align-items:center; gap:18px; }
+  .ring-wrap { position:relative; width:130px; height:130px; flex-shrink:0; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring-center .num { font-size:26px; font-weight:800; color:var(--primary-dark); }
+  .ring-center .unit { font-size:12px; color:var(--ink-light); }
+  .ring-info { flex:1; }
+  .ring-info .big { font-size:15px; font-weight:700; margin-bottom:6px; }
+  .ring-info .sub { font-size:13px; color:var(--ink-light); line-height:1.7; }
+  .pill { display:inline-block; border-radius:999px; padding:4px 12px; font-size:12px; font-weight:700; margin-top:8px; color:#fff; }
+
+  /* ---------- 分类 / 食物 ---------- */
+  .cats { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .cat-chip {
+    border:none; cursor:pointer; font-family:inherit;
+    padding:7px 14px; border-radius:999px; font-size:13px; font-weight:700;
+    background:#F4EFE6; color:var(--ink-light); transition: all .15s;
+  }
+  .cat-chip.active { background:var(--primary); color:#fff; transform:scale(1.05); }
+  .food-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .food-btn {
+    border:none; cursor:pointer; font-family:inherit;
+    background:#FFF9F0; border-radius:20px; padding:12px 4px 10px;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    transition: transform .12s; border:2px solid transparent;
+  }
+  .food-btn:active { transform:scale(.92); }
+  .food-btn .em { font-size:28px; }
+  .food-btn .nm { font-size:13px; font-weight:700; }
+  .food-btn .pf { font-size:11px; color:var(--ink-light); }
+  .food-btn .pf b { color:var(--teal); }
+  .food-btn:hover { border-color: var(--primary); }
+
+  /* ---------- 已记录 ---------- */
+  .log-list { display:flex; flex-direction:column; gap:8px; }
+  .log-item {
+    display:flex; align-items:center; gap:10px;
+    background:#FFF9F0; border-radius:16px; padding:10px 12px;
+    animation: pop .25s ease;
+  }
+  @keyframes pop { from { transform:scale(.85); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .log-item .em { font-size:22px; }
+  .log-item .nm { flex:1; font-size:14px; font-weight:600; }
+  .log-item .nm small { display:block; color:var(--ink-light); font-weight:400; font-size:11px; }
+  .log-item .pv { font-size:14px; font-weight:800; color:var(--teal); }
+  .log-item .del {
+    border:none; background:#FFE3E3; color:var(--pink); width:26px; height:26px;
+    border-radius:10px; cursor:pointer; font-size:14px; font-weight:800; line-height:1;
+  }
+  .empty { text-align:center; color:var(--ink-light); font-size:13px; padding:18px 0; }
+
+  /* ---------- 推荐 ---------- */
+  .rec-note { font-size:13px; color:var(--ink-light); margin-bottom:12px; line-height:1.6; }
+  .rec-list { display:flex; flex-direction:column; gap:10px; }
+  .rec-item {
+    display:flex; align-items:center; gap:12px;
+    background:linear-gradient(120deg,#FFF4E0,#FFF9F0);
+    border-radius:20px; padding:12px 14px;
+  }
+  .rec-item .em { font-size:30px; }
+  .rec-item .info { flex:1; }
+  .rec-item .info .t { font-size:14px; font-weight:700; }
+  .rec-item .info .d { font-size:12px; color:var(--ink-light); margin-top:2px; }
+  .rec-item .info .d b { color:var(--teal); }
+  .rec-item button {
+    border:none; cursor:pointer; font-family:inherit;
+    background:var(--teal); color:#fff; font-size:13px; font-weight:800;
+    padding:9px 14px; border-radius:14px; box-shadow:0 3px 0 #1BA9A7;
+  }
+  .rec-item button:active { transform:translateY(2px); box-shadow:none; }
+  .done-card { text-align:center; padding:8px 0 4px; }
+  .done-card .em { font-size:44px; }
+  .done-card .t { font-size:16px; font-weight:800; margin-top:6px; color:var(--green); }
+  .done-card .d { font-size:13px; color:var(--ink-light); margin-top:4px; }
+
+  /* ---------- 历史 ---------- */
+  .hist { display:flex; align-items:flex-end; gap:8px; height:110px; padding-top:6px; }
+  .hist .col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+  .hist .bar {
+    width:100%; max-width:34px; border-radius:10px 10px 4px 4px;
+    background:linear-gradient(180deg, var(--primary), #FFC98A); min-height:4px;
+    transition:height .5s ease;
+  }
+  .hist .bar.hit { background:linear-gradient(180deg, var(--green), #9BF0BC); }
+  .hist .lb { font-size:10px; color:var(--ink-light); }
+
+  /* ---------- 弹窗 ---------- */
+  .modal-mask {
+    position:fixed; inset:0; background:rgba(74,59,42,.45);
+    display:none; align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .modal-mask.show { display:flex; }
+  .modal {
+    background:#fff; border-radius:28px; padding:24px; width:100%; max-width:380px;
+    animation: rise .25s ease; max-height: 86vh; overflow:auto;
+  }
+  @keyframes rise { from { transform:translateY(30px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+  .modal h3 { font-size:18px; margin-bottom:16px; text-align:center; }
+  .field { margin-bottom:16px; }
+  .field label { font-size:13px; font-weight:700; display:block; margin-bottom:8px; }
+  .weight-row { display:flex; align-items:center; gap:12px; }
+  .weight-row input[type=range] { flex:1; accent-color:var(--primary); }
+  .weight-val {
+    min-width:74px; text-align:center; background:#FFF4E0; border-radius:14px;
+    padding:8px 6px; font-weight:800; color:var(--primary-dark); font-size:15px;
+  }
+  .goal-row { display:flex; gap:8px; }
+  .goal-btn {
+    flex:1; border:2px solid #F0E9DC; background:#fff; border-radius:16px;
+    padding:10px 4px; cursor:pointer; font-family:inherit; transition:all .15s;
+  }
+  .goal-btn .ge { font-size:22px; display:block; }
+  .goal-btn .gt { font-size:13px; font-weight:800; display:block; margin-top:2px; }
+  .goal-btn .gd { font-size:10px; color:var(--ink-light); }
+  .goal-btn.active { border-color:var(--primary); background:#FFF4E0; }
+  .modal .save {
+    width:100%; border:none; cursor:pointer; font-family:inherit;
+    background:linear-gradient(120deg,var(--primary),#FFB661); color:#fff;
+    font-size:16px; font-weight:800; padding:14px; border-radius:18px;
+    box-shadow:0 4px 0 var(--primary-dark);
+  }
+  .modal .save:active { transform:translateY(2px); box-shadow:none; }
+  .hint { font-size:11px; color:var(--ink-light); line-height:1.7; margin-top:10px; text-align:center; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position:fixed; left:50%; bottom:60px; transform:translateX(-50%) translateY(20px);
+    background:rgba(74,59,42,.9); color:#fff; font-size:14px; font-weight:600;
+    padding:10px 22px; border-radius:999px; opacity:0; pointer-events:none;
+    transition:all .25s; z-index:99; white-space:nowrap;
+  }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .footer { text-align:center; font-size:11px; color:var(--ink-light); margin-top:8px; line-height:1.8; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo"><span>🍗</span>蛋白质小助手</div>
+    <button class="icon-btn" id="btnProfile" title="设置">⚙️</button>
+  </header>
+
+  <!-- 今日进度 -->
+  <section class="card">
+    <div class="ring-row">
+      <div class="ring-wrap">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle cx="65" cy="65" r="54" fill="none" stroke="#F4EFE6" stroke-width="14"/>
+          <circle id="ringBar" cx="65" cy="65" r="54" fill="none" stroke="#FF9F43" stroke-width="14"
+                  stroke-linecap="round" stroke-dasharray="339.29" stroke-dashoffset="339.29"/>
+        </svg>
+        <div class="ring-center">
+          <div class="num" id="ringNum">0</div>
+          <div class="unit">/ <span id="ringTarget">0</span> 克</div>
+        </div>
+      </div>
+      <div class="ring-info">
+        <div class="big" id="helloLine">你好呀！</div>
+        <div class="sub" id="statusLine"></div>
+        <span class="pill" id="statusPill" style="background:var(--teal)">--</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 推荐吃什么 -->
+  <section class="card">
+    <h2>🧑‍🍳 接下来吃什么？</h2>
+    <div id="recBox"></div>
+  </section>
+
+  <!-- 添加食物 -->
+  <section class="card">
+    <h2>🍽️ 今天吃了什么 <span class="tag">点一下即记录</span></h2>
+    <div class="cats" id="catRow"></div>
+    <div class="food-grid" id="foodGrid"></div>
+  </section>
+
+  <!-- 已记录 -->
+  <section class="card">
+    <h2>📋 今日摄入清单</h2>
+    <div class="log-list" id="logList"></div>
+  </section>
+
+  <!-- 最近7天 -->
+  <section class="card">
+    <h2>📈 最近 7 天</h2>
+    <div class="hist" id="hist"></div>
+  </section>
+
+  <div class="footer">数据保存在本机浏览器 · 换设备不同步 · 仅供健康参考 🐣</div>
+</div>
+
+<!-- 设置弹窗 -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <h3>🐣 打造你的专属目标</h3>
+    <div class="field">
+      <label>📏 你的体重：<span id="wEcho" style="color:var(--primary-dark)">60</span> 公斤</label>
+      <div class="weight-row">
+        <input type="range" id="weightRange" min="30" max="150" step="1" value="60">
+        <div class="weight-val"><span id="wEcho2">60</span> kg</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>🎯 你的小目标（决定每公斤需要多少克蛋白质）</label>
+      <div class="goal-row" id="goalRow">
+        <button class="goal-btn" data-goal="cut"><span class="ge">🏃</span><span class="gt">减脂</span><span class="gd" id="gd-cut">-- g/kg</span></button>
+        <button class="goal-btn active" data-goal="gain"><span class="ge">💪</span><span class="gt">增肌</span><span class="gd" id="gd-gain">-- g/kg</span></button>
+        <button class="goal-btn" data-goal="keep"><span class="ge">🧘</span><span class="gt">维持</span><span class="gd" id="gd-keep">-- g/kg</span></button>
+      </div>
+    </div>
+    <div class="hint" id="formulaHint"></div>
+    <button class="save" id="btnSave">好啦，开始打卡！🎉</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= 数据 ================= */
+const COEF = { cut: 2.2, gain: 2.0, keep: 1.4 };
+const GOAL_NAME = { cut: "减脂", gain: "增肌", keep: "维持" };
+
+// p = 蛋白质(克)/100克(或毫升), g = 一次常见份量
+const FOODS = [
+  { id:"chicken", name:"鸡胸肉",    em:"🍗", cat:"meat", p:31,  g:100 },
+  { id:"beef",    name:"瘦牛肉",    em:"🥩", cat:"meat", p:20,  g:100 },
+  { id:"pork",    name:"猪里脊",    em:"🐖", cat:"meat", p:20,  g:100 },
+  { id:"duck",    name:"鸭腿(去皮)",em:"🦆", cat:"meat", p:19,  g:120 },
+  { id:"egg",     name:"鸡蛋(1个)", em:"🥚", cat:"egg",  p:13,  g:50  },
+  { id:"milk",    name:"牛奶",      em:"🥛", cat:"egg",  p:3.3, g:250 },
+  { id:"yogurt",  name:"酸奶",      em:"🍶", cat:"egg",  p:3.5, g:200 },
+  { id:"cheese",  name:"奶酪片",    em:"🧀", cat:"egg",  p:20,  g:25  },
+  { id:"fish",    name:"三文鱼",    em:"🐟", cat:"sea",  p:20,  g:100 },
+  { id:"shrimp",  name:"虾仁",      em:"🦐", cat:"sea",  p:18,  g:100 },
+  { id:"tuna",    name:"金枪鱼",    em:"🐠", cat:"sea",  p:24,  g:100 },
+  { id:"tofu",    name:"豆腐",      em:"🥣", cat:"bean", p:8,   g:100 },
+  { id:"soymilk", name:"豆浆",      em:"🫘", cat:"bean", p:3,   g:250 },
+  { id:"dried",   name:"豆干",      em:"🟫", cat:"bean", p:16,  g:50  },
+  { id:"edamame", name:"毛豆",      em:"🌱", cat:"bean", p:13,  g:80  },
+  { id:"rice",    name:"米饭",      em:"🍚", cat:"staple", p:2.6, g:150 },
+  { id:"noodle",  name:"面条",      em:"🍜", cat:"staple", p:3.6, g:200 },
+  { id:"bread",   name:"全麦面包",  em:"🍞", cat:"staple", p:9,  g:50 },
+  { id:"oat",     name:"燕麦片",    em:"🌾", cat:"staple", p:13, g:40 },
+  { id:"potato",  name:"红薯",      em:"🍠", cat:"staple", p:1.6, g:150 },
+  { id:"corn",    name:"玉米",      em:"🌽", cat:"staple", p:4,  g:100 },
+  { id:"brocoli", name:"西兰花",    em:"🥦", cat:"veg",  p:3,   g:150 },
+  { id:"spinach", name:"菠菜",      em:"🥬", cat:"veg",  p:2.9, g:150 },
+  { id:"mushroom",name:"蘑菇",      em:"🍄", cat:"veg",  p:3.1, g:100 },
+  { id:"nut",     name:"混合坚果",  em:"🥜", cat:"veg",  p:20,  g:25  },
+  { id:"pea",     name:"豌豆",      em:"🫛", cat:"veg",  p:5.4, g:100 },
+  { id:"whey",    name:"蛋白粉(1勺)",em:"💪", cat:"sup",  p:80,  g:30 },
+  { id:"bar",     name:"蛋白棒",    em:"🍫", cat:"sup",  p:33,  g:60 },
+];
+const CATS = [
+  { id:"all",    name:"全部" },
+  { id:"meat",   name:"🥩 肉类" },
+  { id:"sea",    name:"🐟 海鲜" },
+  { id:"egg",    name:"🥚 蛋奶" },
+  { id:"bean",   name:"🫘 豆类" },
+  { id:"staple", name:"🍚 主食" },
+  { id:"veg",    name:"🥦 蔬果" },
+  { id:"sup",    name:"💪 补剂" },
+];
+
+/* ================= 存储 ================= */
+const KEY = "proteinBuddyV1";
+function todayStr(d = new Date()) {
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) { return {}; }
+}
+function saveState() { localStorage.setItem(KEY, JSON.stringify(state)); }
+let state = loadState();
+if (!state.profile) state.profile = null;      // {weight, goal}
+if (!state.logs)    state.logs = {};           // { "2026-09-12": [{foodId, grams}] }
+
+/* ================= 工具 ================= */
+const $ = (id) => document.getElementById(id);
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("show"), 1600);
+}
+function fmt(n) { return Math.round(n * 10) / 10; }
+function proteinOf(entry) { // entry: {foodId, grams}
+  const f = FOODS.find(x => x.id === entry.foodId);
+  return f ? f.p * entry.grams / 100 : 0;
+}
+function dailyTarget() {
+  const pf = state.profile;
+  if (!pf) return 0;
+  return Math.round(pf.weight * COEF[pf.goal]);
+}
+function todayLog() {
+  const k = todayStr();
+  if (!state.logs[k]) state.logs[k] = [];
+  return state.logs[k];
+}
+function consumedToday() {
+  return todayLog().reduce((s, e) => s + proteinOf(e), 0);
+}
+
+/* ================= 渲染 ================= */
+let curCat = "all";
+
+function renderCats() {
+  $("catRow").innerHTML = CATS.map(c =>
+    `<button class="cat-chip ${c.id===curCat?"active":""}" data-cat="${c.id}">${c.name}</button>`).join("");
+}
+function renderFoods() {
+  const list = FOODS.filter(f => curCat === "all" || f.cat === curCat);
+  $("foodGrid").innerHTML = list.map(f =>
+    `<button class="food-btn" data-food="${f.id}">
+       <span class="em">${f.em}</span>
+       <span class="nm">${f.name}</span>
+       <span class="pf">1份≈<b>${f.g}g</b>·${fmt(f.p*f.g/100)}g蛋白</span>
+     </button>`).join("");
+}
+function renderRing() {
+  const target = dailyTarget();
+  const eaten = consumedToday();
+  const pct = target > 0 ? Math.min(eaten / target, 1) : 0;
+  const C = 339.29;
+  const bar = $("ringBar");
+  bar.style.stroke = pct >= 1 ? "#2ED573" : "#FF9F43";
+  bar.style.strokeDashoffset = C * (1 - pct);
+  $("ringNum").textContent = Math.round(eaten);
+  $("ringTarget").textContent = target;
+
+  if (!state.profile) { $("helloLine").textContent = "你好呀！"; $("statusLine").textContent = "先设置体重和目标吧～"; $("statusPill").textContent = "待设置"; return; }
+  const pf = state.profile;
+  const remain = Math.max(target - eaten, 0);
+  $("helloLine").textContent = `${pf.weight}kg · 目标「${GOAL_NAME[pf.goal]}」`;
+  if (eaten === 0) {
+    $("statusLine").textContent = `今天还没开始记录，目标 ${target}g 蛋白质，冲鸭！`;
+    $("statusPill").textContent = "还没开吃 🍳"; $("statusPill").style.background = "var(--teal)";
+  } else if (eaten >= target) {
+    $("statusLine").textContent = `已摄入 ${fmt(eaten)}g，超出目标 ${fmt(eaten-target)}g，别撑着哦～`;
+    $("statusPill").textContent = "达标啦 🎉"; $("statusPill").style.background = "var(--green)";
+  } else {
+    $("statusLine").textContent = `已摄入 ${fmt(eaten)}g，还差 ${fmt(remain)}g 就达标啦！`;
+    $("statusPill").textContent = `完成 ${Math.round(eaten/target*100)}% 💪`; $("statusPill").style.background = "var(--primary)";
+  }
+}
+function renderLog() {
+  const log = todayLog();
+  if (!log.length) { $("logList").innerHTML = `<div class="empty">空空如也，快去点上面的食物吧 👆</div>`; return; }
+  $("logList").innerHTML = log.map((e, i) => {
+    const f = FOODS.find(x => x.id === e.foodId); if (!f) return "";
+    return `<div class="log-item">
+      <span class="em">${f.em}</span>
+      <span class="nm">${f.name} × ${e.grams}g<small>蛋白质 ${fmt(proteinOf(e))}g</small></span>
+      <span class="pv">+${fmt(proteinOf(e))}g</span>
+      <button class="del" data-del="${i}">✕</button>
+    </div>`;
+  }).join("");
+}
+/* 推荐逻辑：根据缺口，按“蛋白质密度×合理份量”挑3种不重复类别的食物 */
+function renderRec() {
+  const target = dailyTarget();
+  const eaten = consumedToday();
+  const box = $("recBox");
+  if (!state.profile) { box.innerHTML = `<div class="empty">先点右上角 ⚙️ 设置体重和目标～</div>`; return; }
+
+  if (eaten >= target) {
+    box.innerHTML = `<div class="done-card">
+      <div class="em">🎉🥳🎊</div>
+      <div class="t">今天的蛋白质达标啦！</div>
+      <div class="d">共摄入 ${fmt(eaten)}g / 目标 ${target}g<br>记得多喝水，好好休息，肌肉在偷偷生长～</div>
+    </div>`;
+    return;
+  }
+  const remain = target - eaten;
+  const eatenIds = new Set(todayLog().map(e => e.foodId));
+  // 打分：蛋白质密度为主，今天没吃过的加分，日常食物(份量适中)优先
+  const scored = FOODS
+    .map(f => ({ ...f, need: remain / (f.p / 100) }))          // 补满缺口需要的克数
+    .filter(f => f.need >= 15)                                  // 至少要吃一口才有意义
+    .map(f => {
+      const serveG = Math.min(Math.max(f.need, f.g * 0.5), Math.max(f.g * 2, 100)); // 推荐份量：按缺口，但限制在合理范围
+      const gain = f.p * serveG / 100;
+      let score = f.p;                                          // 密度
+      if (!eatenIds.has(f.id)) score *= 1.4;                    // 换着花样吃
+      if (f.cat === "veg" && remain > 20) score *= 0.6;         // 缺口大时蔬菜效率低
+      if (f.g <= 60) score *= 1.1;                              // 小份量更容易执行
+      return { f, serveG: Math.round(serveG), gain };
+    })
+    .sort((a, b) => b.score * b.gain / 100 - a.score * a.gain / 100);
+
+  // 挑选：尽量不同类别
+  const picked = []; const usedCat = new Set();
+  for (const s of scored) {
+    if (picked.length >= 3) break;
+    if (usedCat.has(s.f.cat) && picked.length < 2) continue;
+    picked.push(s); usedCat.add(s.f.cat);
+  }
+  if (!picked.length) { box.innerHTML = `<div class="empty">缺口很小啦，喝杯牛奶就够咯 🥛</div>`; return; }
+
+  box.innerHTML = `<div class="rec-note">还差 <b style="color:var(--pink)">${fmt(remain)}g</b> 蛋白质，推荐这样补 👇</div>
+    <div class="rec-list">` +
+    picked.map(s =>
+      `<div class="rec-item">
+        <span class="em">${s.f.em}</span>
+        <div class="info">
+          <div class="t">${s.f.name} 约 ${s.serveG}g</div>
+          <div class="d">补充 <b>${fmt(s.gain)}g</b> 蛋白质 · 覆盖缺口 ${Math.min(Math.round(s.gain/remain*100),100)}%</div>
+        </div>
+        <button data-addrec="${s.f.id}" data-grams="${s.serveG}">吃它！</button>
+      </div>`).join("") +
+    `</div>`;
+}
+function renderHist() {
+  const target = dailyTarget();
+  const cols = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const k = todayStr(d);
+    const eaten = (state.logs[k] || []).reduce((s, e) => s + proteinOf(e), 0);
+    const h = target > 0 ? Math.min(eaten / target, 1) * 100 : 0;
+    cols.push(`<div class="col">
+      <div class="bar ${target>0 && eaten>=target ? "hit":""}" style="height:${Math.max(h,3)}%" title="${fmt(eaten)}g"></div>
+      <div class="lb">${i===0?"今天":(d.getMonth()+1)+"/"+d.getDate()}</div>
+    </div>`);
+  }
+  $("hist").innerHTML = cols.join("");
+}
+function renderAll() { renderCats(); renderFoods(); renderRing(); renderLog(); renderRec(); renderHist(); }
+
+/* ================= 交互 ================= */
+$("foodGrid").addEventListener("click", (ev) => {
+  const btn = ev.target.closest("[data-food]"); if (!btn) return;
+  const f = FOODS.find(x => x.id === btn.dataset.food);
+  todayLog().push({ foodId: f.id, grams: f.g });
+  saveState(); renderRing(); renderLog(); renderRec(); renderHist();
+  toast(`${f.em} 已记录 +${fmt(f.p*f.g/100)}g 蛋白！`);
+});
+$("logList").addEventListener("click", (ev) => {
+  const btn = ev.target.closest("[data-del]"); if (!btn) return;
+  todayLog().splice(Number(btn.dataset.del), 1);
+  saveState(); renderRing(); renderLog(); renderRec(); renderHist();
+  toast("已删除该条记录 🗑️");
+});
+$("recBox").addEventListener("click", (ev) => {
+  const btn = ev.target.closest("[data-addrec]"); if (!btn) return;
+  const f = FOODS.find(x => x.id === btn.dataset.addrec);
+  todayLog().push({ foodId: f.id, grams: Number(btn.dataset.grams) });
+  saveState(); renderRing(); renderLog(); renderRec(); renderHist();
+  toast(`${f.em} 记录成功，继续加油！`);
+});
+$("catRow").addEventListener("click", (ev) => {
+  const btn = ev.target.closest("[data-cat]"); if (!btn) return;
+  curCat = btn.dataset.cat; renderCats(); renderFoods();
+});
+
+/* ---------- 设置弹窗 ---------- */
+let selGoal = state.profile ? state.profile.goal : "gain";
+function openModal() {
+  $("modalMask").classList.add("show");
+  const w = state.profile ? state.profile.weight : 60;
+  $("weightRange").value = w; $("wEcho").textContent = w; $("wEcho2").textContent = w;
+  selGoal = state.profile ? state.profile.goal : "gain";
+  document.querySelectorAll(".goal-btn").forEach(b => b.classList.toggle("active", b.dataset.goal === selGoal));
+  echoCoef();
+}
+function echoCoef() {
+  $("gd-cut").textContent  = COEF.cut  + " g/kg";
+  $("gd-gain").textContent = COEF.gain + " g/kg";
+  $("gd-keep").textContent = COEF.keep + " g/kg";
+  const w = Number($("weightRange").value);
+  $("formulaHint").innerHTML =
+    `每日目标 = 体重 <b>${w}kg</b> × <b>${COEF[selGoal]}</b>（${GOAL_NAME[selGoal]}系数）＝ <b style="color:var(--primary-dark)">${Math.round(w*COEF[selGoal])}g</b> 蛋白质`;
+}
+$("btnProfile").addEventListener("click", openModal);
+$("modalMask").addEventListener("click", (ev) => { if (ev.target === $("modalMask")) $("modalMask").classList.remove("show"); });
+$("weightRange").addEventListener("input", () => {
+  $("wEcho").textContent = $("weightRange").value;
+  $("wEcho2").textContent = $("weightRange").value;
+  echoCoef();
+});
+$("goalRow").addEventListener("click", (ev) => {
+  const btn = ev.target.closest(".goal-btn"); if (!btn) return;
+  selGoal = btn.dataset.goal;
+  document.querySelectorAll(".goal-btn").forEach(b => b.classList.toggle("active", b === btn));
+  echoCoef();
+});
+$("btnSave").addEventListener("click", () => {
+  state.profile = { weight: Number($("weightRange").value), goal: selGoal };
+  saveState();
+  $("modalMask").classList.remove("show");
+  renderAll();
+  toast(`目标已设定：每天 ${dailyTarget()}g 蛋白质 💪`);
+});
+
+/* ================= 启动 ================= */
+echoCoef();
+renderAll();
+if (!state.profile) openModal();   // 首次使用自动弹出设置
+
+/* PWA：注册 Service Worker（仅 http/https 下，双击本地文件打开时跳过） */
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "127.0.0.1" || location.hostname === "localhost")) {
+  navigator.serviceWorker.register("sw.js").catch((err) => console.warn("SW 注册失败(不影响使用):", err));
+}
+</script>
+</body>
+</html>
