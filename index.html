@@ -26,7 +26,7 @@
   html,body { height:100%; }
   body {
     font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
-    background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 100%) fixed;
+    background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 100%);
     color:var(--ink); display:flex; justify-content:center;
     padding:14px 12px 60px; min-height:100vh;
   }
@@ -375,13 +375,16 @@
   .cus-theme-row input[type=color] { width:42px; height:36px; border:none; background:none; cursor:pointer; padding:0; }
 
   /* ===== v2.2 喝水模块 + 主题壁纸/角色 ===== */
-  body.has-wallpaper {
-    background-image: var(--wall) !important;
-    background-size: cover;
+  /* 壁纸用独立 fixed 图层：移动端 background-attachment:fixed 会导致模糊/跳动/错误缩放 */
+  #wallpaperLayer {
+    position: fixed; inset: 0; z-index: -1;
     background-position: center top;
+    background-size: cover;
     background-repeat: no-repeat;
-    background-attachment: fixed;
+    display: none;
+    transform: translateZ(0); /* 独立合成层，滚动时不重绘不跳动 */
   }
+  body.has-wallpaper #wallpaperLayer { display: block; background-image: var(--wall); }
   .water-card { position: relative; overflow: hidden; }
   .water-top { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
   .water-top .wv { font-size:22px; font-weight:800; color:#3D9AD1; }
@@ -420,6 +423,7 @@
 </style>
 </head>
 <body>
+<div id="wallpaperLayer" aria-hidden="true"></div>
 <div id="app">
   <header>
     <div class="logo"><span>🍔</span>蛋白质小助手</div>

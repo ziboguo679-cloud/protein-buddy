@@ -2,7 +2,7 @@
  * 缓存策略：预缓存应用外壳，更新时按版本号整体替换并清理旧缓存。
  * 修改本文件请同步递增 CACHE_VERSION，否则客户端不会拿到新页面。
  */
-const CACHE_VERSION = "protein-buddy-v7";
+const CACHE_VERSION = "protein-buddy-v8";
 const ASSETS = [
   "./",
   "./index.html",
