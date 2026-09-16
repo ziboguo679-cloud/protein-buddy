@@ -10,6 +10,8 @@ const MEALS = [
   { id: "dinner",    name: "晚餐", em: "🌙" },
   { id: "snack",     name: "加餐", em: "🍡" },
 ];
+// 分餐次目标占比（早25% 午35% 晚30% 加餐10%）
+const MEAL_SPLIT = { breakfast: 0.25, lunch: 0.35, dinner: 0.30, snack: 0.10 };
 const CATS = [
   { id: "all",    name: "全部" },
   { id: "meat",   name: "🥩 肉类" },
@@ -279,8 +281,9 @@ function renderLog() {
     const items = log.filter(e => e.meal === m.id);
     if (!items.length) return "";
     const sub = items.reduce((s, e) => s + e.p100 * e.grams / 100, 0);
-    return `<div class="meal-group">
-      <div class="gt">${m.em} ${m.name} · ${fmt(sub)}g 蛋白</div>
+    return `<div class="meal-group" data-mg="${m.id}">
+      <div class="gt">${m.em} ${m.name} · ${fmt(sub)}g 蛋白 <button class="mg-note-btn" data-mnote="${m.id}" title="餐次备注">💬</button></div>
+      <div class="mg-note" id="mgn-${m.id}"></div>
       <div class="log-list">` +
       items.map(e => {
         const pv = e.p100 * e.grams / 100;
@@ -313,7 +316,19 @@ function renderRec() {
     return;
   }
   const remain = target - eaten;
-  const todayIds = new Set(dayLog(curDate).map(e => e.name));
+  const dayEntries = dayLog(curDate);
+  // 统计今天每种食物/每个类别吃过几次，用于动态降权换花样
+  const eatenCount = {};
+  dayEntries.forEach(e => { eatenCount[e.name] = (eatenCount[e.name] || 0) + 1; });
+  const eatenCatCount = {};
+  dayEntries.forEach(e => {
+    const f = allFoods().find(x => x.name === e.name);
+    if (f) eatenCatCount[f.cat] = (eatenCatCount[f.cat] || 0) + 1;
+  });
+  // 用“日期+已记录条数”做种子轮换：不同天数/不同时段刷新都会换组合
+  let seed = 0;
+  const seedStr = curDate + "#" + dayEntries.length;
+  for (let i = 0; i < seedStr.length; i++) seed = (seed * 131 + seedStr.charCodeAt(i)) % 100000;
   const scored = allFoods()
     .map(f => ({ f, need: remain / (f.p / 100) }))
     .filter(x => x.need >= 15)
@@ -321,16 +336,27 @@ function renderRec() {
       const serveG = Math.min(Math.max(x.need, x.f.g * 0.5), Math.max(x.f.g * 2, 100));
       const gain = x.f.p * serveG / 100;
       let score = x.f.p;
-      if (!todayIds.has(x.f.name)) score *= 1.4;
+      const times = eatenCount[x.f.name] || 0;
+      if (times === 0) score *= 1.5;                       // 今天没吃过的优先
+      else score *= Math.max(0.15, 0.5 / times);           // 吃过的强烈降权，避免总推老三样
+      const catTimes = eatenCatCount[x.f.cat] || 0;
+      if (catTimes >= 2) score *= 0.5;                     // 同类别吃多了换口味
       if (x.f.cat === "veg" && remain > 20) score *= 0.6;
       if (vegOnly && !x.f.veg) score *= 0.1;
       if (x.f.g <= 60) score *= 1.1;
-      return { f: x.f, serveG: Math.round(serveG), gain, score: score * gain / 100 };
+      let h2 = 0;
+      for (const ch of x.f.id) h2 = (h2 * 31 + ch.charCodeAt(0)) % 997;
+      const rot = ((seed + h2 * 37) % 100) / 100;          // 0~1 轮换因子
+      return { f: x.f, serveG: Math.round(serveG), gain, score: score * gain / 100 * (0.75 + rot * 0.5) };
     })
     .sort((a, b) => b.score - a.score);
+  // 前 6 名候选按种子轮换起点，再挑 3 个不同类别
+  const pool = scored.slice(0, 6);
+  const start = pool.length ? seed % pool.length : 0;
+  const ordered = pool.slice(start).concat(pool.slice(0, start));
   const picked = [];
   const usedCat = new Set();
-  for (const s of scored) {
+  for (const s of ordered) {
     if (picked.length >= 3) break;
     if (usedCat.has(s.f.cat) && picked.length < 2) continue;
     picked.push(s);
@@ -410,14 +436,19 @@ function renderCalendar() {
 function renderAll() {
   renderDateBar();
   renderRing();
+  renderMealProgress();
+  renderWater();
+  renderWaterCard();
   renderMeals();
   renderCats();
   renderMult();
   renderFoods();
   renderLog();
+  renderNotes();
   renderRec();
   renderTemplates();
   renderStats();
+  renderStreak();
   renderCalendar();
 }
 
@@ -547,6 +578,7 @@ $("btnProfile").addEventListener("click", () => {
   document.querySelectorAll(".goal-btn").forEach(b => b.classList.toggle("active", b.dataset.goal === p.goal));
   $("coefInput").value = p.coef || "";
   $("macroToggle").checked = !!p.macroOn;
+  $("waterGoalInput").value = waterGoal();
   renderWeightLogInfo();
   openModal("mProfile");
 });
@@ -575,6 +607,9 @@ $("btnSaveProfile").addEventListener("click", () => {
     macroOn: $("macroToggle").checked,
   };
   if (!state.weights[todayStr()]) state.weights[todayStr()] = weight;
+  // v2.2 喝水目标随设置保存
+  const wg = Number($("waterGoalInput").value);
+  if (wg >= 500 && wg <= 5000) waterGoal(wg);
   save();
   closeModal("mProfile");
   renderAll();
@@ -811,4 +846,309 @@ if (!state.profile) {
   syncWeightInputs(state.profile.weight);
   echoFormula();
   renderAll();
+}
+
+/* ============================================================
+ * v2.1 新增功能（增量，不动上方原有逻辑）
+ * ============================================================ */
+
+/* ---------- 5. 分餐次进度 ---------- */
+function renderMealProgress() {
+  const target = dailyTarget();
+  MEALS.forEach(m => {
+    const sub = dayLog(curDate).filter(e => e.meal === m.id)
+      .reduce((s, e) => s + e.p100 * e.grams / 100, 0);
+    const goal = Math.round(target * MEAL_SPLIT[m.id]);
+    $("mpv-" + m.id).textContent = Math.round(sub) + "/" + goal + "g";
+    const fill = $("mpf-" + m.id);
+    const pct = goal > 0 ? Math.min(sub / goal, 1) * 100 : 0;
+    fill.style.width = pct + "%";
+    fill.classList.toggle("hit", goal > 0 && sub >= goal);
+  });
+}
+
+/* ---------- 6. 饮水建议 ---------- */
+function renderWater() {
+  const el = $("waterLine");
+  if (!state.profile) { el.classList.remove("show"); return; }
+  const p = consumed(curDate);
+  const ml = Math.round((state.profile.weight * 30 + p * 7) / 100) * 100;
+  el.innerHTML = `💧 高蛋白饮食记得多喝水～今日已摄入 <b>${Math.round(p)}g</b> 蛋白，建议饮水约 <b>${(ml / 1000).toFixed(1)}L</b>（按体重 30ml/kg + 蛋白代谢加成估算）`;
+  el.classList.add("show");
+}
+
+/* ---------- 1. 复制昨日记录 ---------- */
+$("btnCopyYesterday").addEventListener("click", () => {
+  const d = new Date(curDate + "T12:00:00");
+  d.setDate(d.getDate() - 1);
+  const yKey = todayStr(d);
+  const src = (state.logs[yKey] || []).slice();
+  if (!src.length) { toast("昨天没有记录可复制哦 😅"); return; }
+  if (!confirm(`把昨天（${dateLabelStr(yKey)}）的 ${src.length} 条记录复制到${dateLabelStr(curDate)}？`)) return;
+  src.forEach(e => dayLog(curDate).push({ ...e, uid: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) }));
+  save();
+  renderAll();
+  toast(`已复制昨日 ${src.length} 条记录 📋`);
+});
+
+/* ---------- 4. 备注（单日 + 单餐次） ---------- */
+function getNotes(iso) {
+  if (!state.notes) state.notes = {};
+  if (!state.notes[iso]) state.notes[iso] = {};
+  return state.notes[iso];
+}
+let noteCtx = null; // { date, key }  key: "_day" 或餐次 id
+function openNote(date, key, title) {
+  noteCtx = { date, key };
+  $("noteTitle").textContent = title;
+  $("noteText").value = getNotes(date)[key] || "";
+  openModal("mNote");
+}
+function renderNotes() {
+  const notes = (state.notes && state.notes[curDate]) || {};
+  const dayBox = $("dayNoteBox");
+  dayBox.textContent = notes._day || "";
+  dayBox.classList.toggle("show", !!notes._day);
+  MEALS.forEach(m => {
+    const box = $("mgn-" + m.id);
+    if (!box) return;
+    box.textContent = notes[m.id] || "";
+    box.classList.toggle("show", !!notes[m.id]);
+  });
+}
+$("btnDayNote").addEventListener("click", () => openNote(curDate, "_day", "💬 " + dateLabelStr(curDate) + "的备注"));
+$("logList").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-mnote]");
+  if (!b) return;
+  const m = MEALS.find(x => x.id === b.dataset.mnote);
+  openNote(curDate, m.id, "💬 " + m.em + " " + m.name + "备注");
+});
+$("btnNoteSave").addEventListener("click", () => {
+  if (!noteCtx) return;
+  const txt = $("noteText").value.trim();
+  if (txt) getNotes(noteCtx.date)[noteCtx.key] = txt;
+  else delete getNotes(noteCtx.date)[noteCtx.key];
+  save();
+  closeModal("mNote");
+  renderNotes();
+  toast(txt ? "备注已保存 💬" : "备注已清空");
+});
+$("btnNoteClear").addEventListener("click", () => {
+  if (!noteCtx) return;
+  delete getNotes(noteCtx.date)[noteCtx.key];
+  save();
+  closeModal("mNote");
+  renderNotes();
+  toast("备注已清空");
+});
+
+/* ---------- 3. 连续达标天数 ---------- */
+function calcStreak() {
+  const target = dailyTarget();
+  if (!target) return 0;
+  let streak = 0;
+  const d = new Date();
+  // 今天还没达标不打断连击（进行中），从昨天往前数
+  if (consumed(todayStr(d)) < target) d.setDate(d.getDate() - 1);
+  for (let i = 0; i  < 3650; i++) {
+    const iso = todayStr(d);
+    const eaten = (state.logs[iso] || []).reduce((s, e) => s + e.p100 * e.grams / 100, 0);
+    if (eaten >= target) { streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+function renderStreak() {
+  $("stStreak").textContent = calcStreak();
+}
+
+/* ---------- 7. 主题系统 ---------- */
+const THEME_KEY = "proteinBuddyTheme";
+const THEMES = [
+  { id: "default",   name: "🍦 原味奶油", bg1: "#FFF6E5", bg2: "#E3F6FF", p: "#FF9F43", wallpaper: "", characterImg: "" },
+  { id: "kitty",     name: "🎀 奶白小猫",     bg1: "#FFEDF4", bg2: "#FFF7FA", p: "#FF6B9D", wallpaper: "assets/theme-wallpaper/kitty.png", characterImg: "assets/character/kitty.png" },
+  { id: "kuromi",    name: "🖤 浅紫小兔",     bg1: "#F1ECFF", bg2: "#FDEFF9", p: "#8A5CF6", wallpaper: "assets/theme-wallpaper/kuromi.png", characterImg: "assets/character/kuromi.png" },
+  { id: "cinnamon",  name: "☁️ 白色垂耳小狗", bg1: "#EAF6FF", bg2: "#F8FCFF", p: "#5FB4FF", wallpaper: "assets/theme-wallpaper/cinnamoroll.png", characterImg: "assets/character/cinnamoroll.png" },
+  { id: "melody",    name: "🐰 粉色小兔",     bg1: "#FFF0F5", bg2: "#FFFAEF", p: "#FF8FB5", wallpaper: "assets/theme-wallpaper/melody.png", characterImg: "assets/character/melody.png" },
+  { id: "pochacco",  name: "🐶 奶油小狗",     bg1: "#FFFDF2", bg2: "#EFF8FF", p: "#FFC94D", wallpaper: "assets/theme-wallpaper/pachacco.png", characterImg: "assets/character/pachacco.png" },
+  { id: "pudding",   name: "🍮 奶黄小狗",     bg1: "#FFF6DC", bg2: "#FFFBEF", p: "#E8A33D", wallpaper: "assets/theme-wallpaper/pompompurin.png", characterImg: "assets/character/pompompurin.png" },
+  { id: "keroppi",   name: "🐸 绿色青蛙",     bg1: "#EAFBF0", bg2: "#F4FFF8", p: "#3FC46F", wallpaper: "assets/theme-wallpaper/keroppi.png", characterImg: "assets/character/keroppi.png" },
+  { id: "hangyodon", name: "🐟 浅蓝海豹",     bg1: "#E9F4FF", bg2: "#FFF1EC", p: "#4FA3E0", wallpaper: "assets/theme-wallpaper/hangyodon.png", characterImg: "assets/character/hangyodon.png" },
+];
+function darken(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.round(((n >> 16) & 255) * k), g = Math.round(((n >> 8) & 255) * k), b = Math.round((n & 255) * k);
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+function applyThemeColors(bg1, bg2, primary) {
+  const root = document.documentElement.style;
+  root.setProperty("--bg1", bg1);
+  root.setProperty("--bg2", bg2);
+  root.setProperty("--primary", primary);
+  root.setProperty("--primary-dark", darken(primary, 0.82));
+}
+/* v2.2：切换壁纸与角色装饰 */
+function applyThemeAssets(t) {
+  const body = document.body;
+  if (t.wallpaper) {
+    body.classList.add("has-wallpaper");
+    body.style.setProperty("--wall", `url("${t.wallpaper}")`);
+  } else {
+    body.classList.remove("has-wallpaper");
+    body.style.removeProperty("--wall");
+  }
+  const ch = $("themeCharacter");
+  if (t.characterImg) {
+    ch.src = t.characterImg;
+    body.classList.remove("no-character");
+  } else {
+    ch.src = "";
+    body.classList.add("no-character");
+  }
+  // 喝水空状态的角色也跟随主题
+  renderWaterCard();
+}
+function themeById(id) { return THEMES.find(x => x.id === id); }
+function applySavedTheme() {
+  let t = null;
+  try { t = JSON.parse(localStorage.getItem(THEME_KEY)); } catch (e) {}
+  if (!t) return;
+  if (t.id === "custom" && t.colors) {
+    applyThemeColors(t.colors.bg1, t.colors.bg2, t.colors.p);
+    document.body.classList.remove("has-wallpaper");
+    document.body.classList.remove("no-character");
+    const ch = $("themeCharacter");
+    if (ch) { ch.src = t.characterImg || ""; }
+  } else {
+    const preset = themeById(t.id);
+    if (preset && preset.id !== "default") {
+      applyThemeColors(preset.bg1, preset.bg2, preset.p);
+      applyThemeAssets(preset);
+    }
+  }
+}
+function renderThemeGrid() {
+  $("themeGrid").innerHTML = THEMES.map(t =>
+    `<button class="theme-cell ${t.id === curThemeId ? "active" : ""}" data-theme="${t.id}">
+      <span class="sw"><i style="background:${t.bg1}"></i><i style="background:${t.bg2}"></i><i style="background:${t.p}"></i></span>
+      ${t.name}
+    </button>`).join("");
+}
+let curThemeId = "default";
+$("btnTheme").addEventListener("click", () => { renderThemeGrid(); openModal("mTheme"); });
+$("btnThemeClose").addEventListener("click", () => closeModal("mTheme"));
+$("themeGrid").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-theme]");
+  if (!b) return;
+  const t = themeById(b.dataset.theme);
+  if (!t) return;
+  curThemeId = t.id;
+  if (t.id === "default") {
+    const root = document.documentElement.style;
+    root.removeProperty("--bg1");
+    root.removeProperty("--bg2");
+    root.removeProperty("--primary");
+    root.removeProperty("--primary-dark");
+    applyThemeAssets(t);
+    localStorage.removeItem(THEME_KEY);
+  } else {
+    applyThemeColors(t.bg1, t.bg2, t.p);
+    applyThemeAssets(t);
+    localStorage.setItem(THEME_KEY, JSON.stringify({ id: t.id }));
+  }
+  renderThemeGrid();
+  toast(t.name + " 主题已换装 " + t.name.split(" ")[0]);
+});
+$("btnCusThemeApply").addEventListener("click", () => {
+  const bg1 = $("cusBg1").value, bg2 = $("cusBg2").value, p = $("cusPrimary").value;
+  curThemeId = "custom";
+  applyThemeColors(bg1, bg2, p);
+  document.body.classList.remove("has-wallpaper");
+  localStorage.setItem(THEME_KEY, JSON.stringify({ id: "custom", colors: { bg1, bg2, p } }));
+  renderThemeGrid();
+  toast("自定义主题已应用 🎨");
+});
+
+/* 启动时恢复主题 */
+(function () {
+  let t = null;
+  try { t = JSON.parse(localStorage.getItem(THEME_KEY)); } catch (e) {}
+  if (t) curThemeId = t.id || "default";
+  applySavedTheme();
+})();
+
+/* ============================================================
+ * v2.2 新增：喝水记录模块（独立，不影响原有逻辑）
+ * ============================================================ */
+function waterGoal(newVal) {
+  if (!state.water) state.water = { goal: 1500, logs: {} };
+  if (!state.water.goal) state.water.goal = 1500;
+  if (newVal !== undefined) state.water.goal = newVal;
+  return state.water.goal;
+}
+function waterToday() {
+  if (!state.water) waterGoal();
+  const k = todayStr();
+  if (!state.water.logs) state.water.logs = {};
+  return state.water.logs[k] || 0;
+}
+function addWater(ml) {
+  waterGoal();
+  const k = todayStr();
+  state.water.logs[k] = Math.max(0, (state.water.logs[k] || 0) + ml);
+  save();
+  renderWaterCard();
+}
+function renderWaterCard() {
+  const box = $("waterCard");
+  if (!box) return;
+  const goal = waterGoal();
+  const drunk = waterToday();
+  const remain = Math.max(goal - drunk, 0);
+  const pct = Math.min(drunk / goal * 100, 100);
+  // 空状态：还没喝水，展示当前主题角色
+  if (drunk === 0) {
+    const chSrc = ($("themeCharacter") && $("themeCharacter").src) || "";
+    box.innerHTML = `<div class="water-empty">
+      ${chSrc ? `<img src="${chSrc}" alt="">` : `<div style="font-size:40px">💧🐱</div>`}
+      <div class="we">今天还没喝水，来一杯吧</div>
+    </div>
+    <div class="water-actions"><button class="water-btn" data-water="200">💧 +200ml</button></div>
+    <div class="water-actions">
+      <input type="number" id="waterCustom" min="1" max="5000" placeholder="自定义毫升数" class="weight-num" style="flex:1; width:auto; color:#3D9AD1;">
+      <button class="water-btn" data-water-custom style="flex:0 0 auto; padding:11px 16px;">记录</button>
+    </div>`;
+    bindWaterBtns(box);
+    return;
+  }
+  box.innerHTML = `
+    <div class="water-top">
+      <span class="wv">${drunk}</span><span class="wt">/ ${goal} ml</span>
+      <span class="wp">${remain > 0 ? "还差 " + remain + " ml" : "达标啦 🎉"}</span>
+    </div>
+    <div class="water-track"><div class="water-fill ${pct >= 100 ? "full" : ""}" style="width:${pct}%"></div></div>
+    <div class="water-actions">
+      <button class="water-btn ghost" data-water="-200">−200</button>
+      <button class="water-btn" data-water="200">💧 +200ml</button>
+    </div>
+    <div class="water-actions">
+      <input type="number" id="waterCustom" min="1" max="5000" placeholder="自定义毫升数" class="weight-num" style="flex:1; width:auto; color:#3D9AD1;">
+      <button class="water-btn" data-water-custom style="flex:0 0 auto; padding:11px 16px;">记录</button>
+    </div>
+    <div class="water-ripple">一杯约 200ml，支持手动输入任意毫升数；高蛋白日记得多喝哦</div>`;
+  bindWaterBtns(box);
+}
+function bindWaterBtns(box) {
+  box.querySelectorAll("[data-water]").forEach(b => {
+    b.onclick = () => addWater(Number(b.dataset.water));
+  });
+  const customBtn = box.querySelector("[data-water-custom]");
+  if (customBtn) {
+    customBtn.onclick = () => {
+      const v = Math.round(Number(box.querySelector("#waterCustom").value));
+      if (!(v > 0 && v <= 5000)) { toast("请输入 1~5000 之间的毫升数"); return; }
+      addWater(v);
+      toast(`已记录喝水 ${v}ml 💧`);
+    };
+  }
 }

@@ -43,7 +43,7 @@
   }
   .icon-btn:active { transform:scale(.88); }
 
-  .card { background:var(--card); border-radius:26px; box-shadow:var(--shadow); padding:18px; margin-bottom:14px; }
+  .card { background:rgba(255,255,255,.30); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border-radius:26px; box-shadow:var(--shadow); padding:18px; margin-bottom:14px; }
   .card h2 { font-size:16px; margin-bottom:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .tag { font-size:11px; color:#fff; background:var(--teal); border-radius:999px; padding:2px 10px; font-weight:600; }
 
@@ -336,6 +336,79 @@
   .explain-body .box { background:#FFF9F0; border-radius:14px; padding:10px 13px; margin:9px 0; }
   .explain-body .box li { margin-left:17px; }
 
+  /* ===== v2.1 新增组件 ===== */
+  .mini-btn {
+    border:none; cursor:pointer; background:#FFEDE0; color:var(--primary-dark);
+    font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; transition:transform .15s;
+  }
+  .mini-btn:active { transform:scale(.9); }
+  #mealProgRow { display:flex; gap:6px; margin-top:12px; }
+  .mp-box { flex:1; background:#FFF9F0; border-radius:12px; padding:7px 6px; min-width:0; }
+  .mp-top { display:flex; justify-content:space-between; font-size:10px; font-weight:800; color:var(--ink-light); }
+  .mp-top span:last-child { color:var(--teal); }
+  .mp-track { height:6px; background:#F0E9DC; border-radius:99px; margin-top:5px; overflow:hidden; }
+  .mp-fill { height:100%; width:0; background:var(--primary); border-radius:99px; transition:width .4s; }
+  .mp-fill.hit { background:var(--green); }
+  #waterLine {
+    margin-top:9px; font-size:11px; color:#3D7FA6; background:#EAF6FF;
+    border-radius:12px; padding:7px 11px; display:none; line-height:1.6;
+  }
+  #waterLine.show { display:block; }
+  .note-text, .mg-note {
+    font-size:11px; color:var(--ink-light); background:#FFF9F0;
+    border-left:3px solid var(--teal); border-radius:8px; padding:6px 9px;
+    margin:6px 0; white-space:pre-wrap; display:none;
+  }
+  .note-text.show, .mg-note.show { display:block; }
+  .mg-note-btn { border:none; background:transparent; cursor:pointer; font-size:12px; margin-left:4px; }
+  .stat-box.fire .sv { color:#FF7A45; }
+  .theme-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+  .theme-cell {
+    border:2px solid #F0E9DC; background:#fff; border-radius:14px; padding:9px 4px;
+    cursor:pointer; text-align:center; font-size:11px; font-weight:800; color:var(--ink); transition:transform .12s;
+  }
+  .theme-cell:active { transform:scale(.92); }
+  .theme-cell.active { border-color:var(--primary); background:#FFF4E0; }
+  .theme-cell .sw { display:flex; gap:3px; justify-content:center; margin-bottom:5px; }
+  .theme-cell .sw i { width:13px; height:13px; border-radius:50%; display:block; border:1px solid rgba(0,0,0,.08); }
+  .cus-theme-row { display:flex; gap:8px; align-items:center; }
+  .cus-theme-row input[type=color] { width:42px; height:36px; border:none; background:none; cursor:pointer; padding:0; }
+
+  /* ===== v2.2 喝水模块 + 主题壁纸/角色 ===== */
+  body.has-wallpaper {
+    background-image: var(--wall) !important;
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+  .water-card { position: relative; overflow: hidden; }
+  .water-top { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
+  .water-top .wv { font-size:22px; font-weight:800; color:#3D9AD1; }
+  .water-top .wt { font-size:12px; color:var(--ink-light); }
+  .water-top .wp { margin-left:auto; font-size:12px; font-weight:800; color:#3D9AD1; }
+  .water-track { height:14px; background:#E3F2FF; border-radius:99px; overflow:hidden; }
+  .water-fill {
+    height:100%; width:0; border-radius:99px;
+    background:linear-gradient(90deg,#8ED4FF,#3D9AD1);
+    transition:width .4s ease;
+  }
+  .water-fill.full { background:linear-gradient(90deg,#9BF0BC,var(--green)); }
+  .water-actions { display:flex; gap:8px; margin-top:10px; }
+  .water-btn {
+    flex:1; border:none; cursor:pointer; background:linear-gradient(120deg,#8ED4FF,#3D9AD1);
+    color:#fff; font-size:14px; font-weight:800; padding:11px; border-radius:15px;
+    box-shadow:0 4px 0 #2A7BAA; transition:transform .12s;
+  }
+  .water-btn:active { transform:translateY(2px); box-shadow:none; }
+  .water-btn.ghost { background:#EAF6FF; color:#3D9AD1; box-shadow:0 3px 0 #CCE7F7; }
+  .water-empty { text-align:center; padding:8px 0 2px; }
+  .water-empty img { width:88px; opacity:.95; }
+  .water-empty .we { font-size:13px; font-weight:700; color:var(--ink-light); margin-top:2px; }
+  .water-ripple { text-align:center; font-size:11px; color:var(--ink-light); margin-top:8px; }
+  #themeCharacter { display:block; margin:2px auto 6px; width:130px; pointer-events:none; }
+  body.no-character #themeCharacter { display:none; }
+
   #toast {
     position:fixed; left:50%; bottom:56px; transform:translateX(-50%) translateY(20px);
     background:rgba(74,59,42,.92); color:#fff; font-size:13px; font-weight:600;
@@ -351,6 +424,7 @@
   <header>
     <div class="logo"><span>🍔</span>蛋白质小助手</div>
     <div class="hbtns">
+      <button class="icon-btn" id="btnTheme" title="主题装扮">🎨</button>
       <button class="icon-btn" id="btnHelp" title="计算说明">💡</button>
       <button class="icon-btn" id="btnProfile" title="设置">⚙️</button>
     </div>
@@ -380,10 +454,23 @@
         <span class="pill" id="statusPill" style="background:var(--teal)">--</span>
       </div>
     </div>
+    <div id="mealProgRow">
+      <div class="mp-box"><div class="mp-top"><span>🌅早</span><span id="mpv-breakfast">0/0g</span></div><div class="mp-track"><div class="mp-fill" id="mpf-breakfast"></div></div></div>
+      <div class="mp-box"><div class="mp-top"><span>☀️午</span><span id="mpv-lunch">0/0g</span></div><div class="mp-track"><div class="mp-fill" id="mpf-lunch"></div></div></div>
+      <div class="mp-box"><div class="mp-top"><span>🌙晚</span><span id="mpv-dinner">0/0g</span></div><div class="mp-track"><div class="mp-fill" id="mpf-dinner"></div></div></div>
+      <div class="mp-box"><div class="mp-top"><span>🍡加餐</span><span id="mpv-snack">0/0g</span></div><div class="mp-track"><div class="mp-fill" id="mpf-snack"></div></div></div>
+    </div>
+    <div id="waterLine">💧 建议饮水…</div>
     <div id="macroRow">
       <div class="macro-box carb"><div class="mv" id="mCarb">0g</div><div class="ml">碳水</div></div>
       <div class="macro-box fat"><div class="mv" id="mFat">0g</div><div class="ml">脂肪</div></div>
     </div>
+  </section>
+
+  <!-- 喝水记录 -->
+  <section class="card water-card">
+    <h2>💧 今日喝水</h2>
+    <div id="waterCard"></div>
   </section>
 
   <!-- 推荐 -->
@@ -409,7 +496,11 @@
 
   <!-- 记录清单 -->
   <section class="card">
-    <h2>📋 饮食记录 <span class="tag" id="logDateTag">今天</span></h2>
+    <h2>📋 饮食记录 <span class="tag" id="logDateTag">今天</span>
+      <button class="mini-btn" id="btnCopyYesterday" style="margin-left:auto">📋 复制昨日</button>
+      <button class="mini-btn" id="btnDayNote">💬 日备注</button>
+    </h2>
+    <div id="dayNoteBox" class="note-text"></div>
     <div id="logList"></div>
   </section>
 
@@ -426,6 +517,7 @@
       <div class="stat-box hit"><div class="sv" id="stRate">0%</div><div class="sl">达标率</div></div>
       <div class="stat-box"><div class="sv" id="stAvg">0g</div><div class="sl">日均蛋白</div></div>
       <div class="stat-box"><div class="sv" id="stDays">0</div><div class="sl">记录天数</div></div>
+      <div class="stat-box fire"><div class="sv" id="stStreak">0</div><div class="sl">连续达标🔥</div></div>
     </div>
     <div class="hist" id="hist"></div>
   </section>
@@ -443,6 +535,7 @@
     <div class="cal-grid" id="calGrid"></div>
   </section>
 
+  <img id="themeCharacter" src="" alt="">
   <div class="footer">数据保存在本机浏览器 · 支持设置里导出备份 💾 · 仅供健康参考 🐣</div>
 </div>
 
@@ -484,6 +577,14 @@
         <button class="soft-btn blue" id="btnLogWeight" style="flex:0 0 auto; padding:9px 14px;">记录</button>
       </div>
       <div class="hint" id="weightLogInfo">还没有体重记录</div>
+    </div>
+    <div class="field">
+      <label>💧 每日喝水目标（毫升）</label>
+      <div class="weight-row">
+        <input type="number" id="waterGoalInput" min="500" max="5000" step="100" value="1500" class="weight-num" style="flex:1; width:auto;">
+        <span class="kg">ml</span>
+      </div>
+      <div class="hint">默认 1500ml，高蛋白饮食建议酌情多喝</div>
     </div>
     <div class="field">
       <label>💾 数据备份</label>
@@ -624,6 +725,39 @@
       </div>
     </div>
     <button class="save-btn" id="btnHelpClose">明白啦！</button>
+  </div>
+</div>
+
+<!-- 备注弹窗 -->
+<div class="modal-mask" id="mNote">
+  <div class="modal">
+    <h3 id="noteTitle">💬 添加备注</h3>
+    <div class="field">
+      <textarea id="noteText" rows="4" maxlength="200" placeholder="写点备注…（比如：今天练了腿，多吃点）" style="width:100%;border:2px solid #F0E9DC;border-radius:12px;padding:9px;font-family:inherit;font-size:13px;resize:vertical;outline:none;background:#FFFDF9;color:var(--ink);"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="soft-btn red" id="btnNoteClear">清除备注</button>
+      <button class="soft-btn blue" id="btnNoteSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 主题弹窗 -->
+<div class="modal-mask" id="mTheme">
+  <div class="modal">
+    <h3>🎨 主题装扮</h3>
+    <div class="theme-grid" id="themeGrid"></div>
+    <div class="field">
+      <label>🎨 自定义主题</label>
+      <div class="cus-theme-row">
+        <input type="color" id="cusPrimary" value="#FF9F43" title="主色">
+        <input type="color" id="cusBg1" value="#FFF6E5" title="背景色1">
+        <input type="color" id="cusBg2" value="#E3F6FF" title="背景色2">
+        <button class="soft-btn blue" id="btnCusThemeApply" style="flex:1">应用自定义</button>
+      </div>
+      <div class="hint">换主题只改配色，不影响数据；自定义会记住你的选择</div>
+    </div>
+    <button class="save-btn" id="btnThemeClose">完成 ✅</button>
   </div>
 </div>
 
