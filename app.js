@@ -10,8 +10,8 @@ const MEALS = [
   { id: "dinner",    name: "晚餐", em: "🌙" },
   { id: "snack",     name: "加餐", em: "🍡" },
 ];
-// 分餐次目标占比（早25% 午35% 晚30% 加餐10%）
-const MEAL_SPLIT = { breakfast: 0.25, lunch: 0.35, dinner: 0.30, snack: 0.10 };
+// 分餐次目标占比（早30% 午30% 晚30% 加餐10%，按主流“三餐均匀分配+小加餐”共识校准）
+const MEAL_SPLIT = { breakfast: 0.30, lunch: 0.30, dinner: 0.30, snack: 0.10 };
 const CATS = [
   { id: "all",    name: "全部" },
   { id: "meat",   name: "🥩 肉类" },
@@ -24,21 +24,21 @@ const CATS = [
 ];
 // p/c/f = 蛋白质/碳水/脂肪 g 每100g；g = 一份克数；note = 生熟标注；veg = 素食可吃
 const FOODS = [
-  { id:"chicken",  name:"鸡胸肉",   em:"🍗", cat:"meat", p:31,  c:0,   f:3.6, g:100, note:"生", veg:false },
-  { id:"thigh",    name:"去皮鸡腿", em:"🍖", cat:"meat", p:20,  c:0,   f:8,   g:120, note:"生", veg:false },
+  { id:"chicken",  name:"鸡胸肉",   em:"🍗", cat:"meat", p:23,  c:0,   f:3.6, g:100, note:"生", veg:false }, // 生鸡胸约22.5g/100g（USDA），熟后约31g
+  { id:"thigh",    name:"去皮鸡腿", em:"🍖", cat:"meat", p:19,  c:0,   f:8,   g:120, note:"生", veg:false },
   { id:"beef",     name:"瘦牛肉",   em:"🥩", cat:"meat", p:20,  c:1.2, f:6.5, g:100, note:"生", veg:false },
   { id:"pork",     name:"猪里脊",   em:"🐖", cat:"meat", p:20,  c:0.7, f:7.9, g:100, note:"生", veg:false },
   { id:"duck",     name:"鸭腿去皮", em:"🦆", cat:"meat", p:19,  c:0,   f:10,  g:120, note:"生", veg:false },
-  { id:"lamb",     name:"瘦羊肉",   em:"🐏", cat:"meat", p:20,  c:0,   f:7,   g:100, note:"生", veg:false },
+  { id:"lamb",     name:"瘦羊肉",   em:"🐏", cat:"meat", p:17,  c:0,   f:7,   g:100, note:"生", veg:false },
   { id:"burger",   name:"汉堡包",   em:"🍔", cat:"meat", p:12,  c:28,  f:12,  g:200, note:"熟", veg:false },
   { id:"fish",     name:"三文鱼",   em:"🐟", cat:"sea",  p:20,  c:0,   f:13,  g:100, note:"生", veg:false },
   { id:"cod",      name:"鳕鱼",     em:"🐠", cat:"sea",  p:18,  c:0,   f:1,   g:120, note:"生", veg:false },
-  { id:"shrimp",   name:"虾仁",     em:"🦐", cat:"sea",  p:18,  c:0.5, f:1,   g:100, note:"生", veg:false },
+  { id:"shrimp",   name:"虾仁",     em:"🦐", cat:"sea",  p:17,  c:0.5, f:1,   g:100, note:"生", veg:false },
   { id:"tuna",     name:"金枪鱼",   em:"🐋", cat:"sea",  p:24,  c:0,   f:4,   g:100, note:"",  veg:false },
   { id:"squid",    name:"鱿鱼",     em:"🦑", cat:"sea",  p:15,  c:3,   f:1,   g:100, note:"生", veg:false },
   { id:"egg",      name:"鸡蛋1个",  em:"🥚", cat:"egg",  p:13,  c:1.5, f:9,   g:50,  note:"",  veg:true  },
-  { id:"milk",     name:"牛奶",     em:"🥛", cat:"egg",  p:3.3, c:5,   f:3.6, g:250, note:"",  veg:true  },
-  { id:"yogurt",   name:"酸奶",     em:"🍶", cat:"egg",  p:3.5, c:12,  f:3.3, g:200, note:"",  veg:true  },
+  { id:"milk",     name:"牛奶",     em:"🥛", cat:"egg",  p:3,   c:5,   f:3.6, g:250, note:"",  veg:true  },
+  { id:"yogurt",   name:"酸奶",     em:"🍶", cat:"egg",  p:3.1, c:12,  f:3.3, g:200, note:"",  veg:true  },
   { id:"gyogurt",  name:"希腊酸奶", em:"🥣", cat:"egg",  p:9,   c:4,   f:5,   g:100, note:"",  veg:true  },
   { id:"cheese",   name:"奶酪片",   em:"🧀", cat:"egg",  p:20,  c:3,   f:25,  g:25,  note:"",  veg:true  },
   { id:"whey",     name:"蛋白粉1勺",em:"💪", cat:"sup",  p:80,  c:5,   f:3,   g:30,  note:"",  veg:true  },
@@ -47,7 +47,7 @@ const FOODS = [
   { id:"dried",    name:"豆干",     em:"🟫", cat:"bean", p:16,  c:5,   f:8,   g:50,  note:"",  veg:true  },
   { id:"soymilk",  name:"豆浆",     em:"🫘", cat:"bean", p:3,   c:1.2, f:1.6, g:250, note:"",  veg:true  },
   { id:"edamame",  name:"毛豆",     em:"🌱", cat:"bean", p:13,  c:10,  f:5,   g:80,  note:"",  veg:true  },
-  { id:"chickpea", name:"鹰嘴豆",   em:"🟤", cat:"bean", p:19,  c:45,  f:4,   g:60,  note:"熟", veg:true  },
+  { id:"chickpea", name:"鹰嘴豆",   em:"🟤", cat:"bean", p:9,   c:45,  f:4,   g:60,  note:"熟", veg:true  }, // 熟鹰嘴豆约9g/100g（干豆约19g）
   { id:"fuzhu",    name:"腐竹",     em:"🟨", cat:"bean", p:46,  c:15,  f:22,  g:30,  note:"干", veg:true  },
   { id:"rice",     name:"米饭",     em:"🍚", cat:"staple", p:2.6, c:26, f:0.3, g:150, note:"熟", veg:true  },
   { id:"noodle",   name:"面条",     em:"🍜", cat:"staple", p:3.6, c:25, f:0.5, g:200, note:"熟", veg:true  },
@@ -67,10 +67,10 @@ const FOODS = [
 ];
 const EMOJIS = ["🍔","🍗","🥩","🐟","🥚","🥛","🧀","🫘","🍚","🍜","🥦","🍎","💪","🍶","🥣","🍤"];
 const TEMPLATES = [
-  { id:"t1", em:"🌅", name:"增肌早餐",  desc:"鸡蛋+牛奶+燕麦 ≈ 29g蛋白", items:[["egg",100],["milk",250],["oat",40]] },
-  { id:"t2", em:"💪", name:"练后加餐",  desc:"蛋白粉+香蕉 ≈ 28g蛋白",   items:[["whey",30],["banana",100]] },
-  { id:"t3", em:"🥩", name:"高蛋白正餐",desc:"鸡胸+米饭+西兰花 ≈ 51g蛋白", items:[["chicken",150],["rice",150],["brocoli",150]] },
-  { id:"t4", em:"🥬", name:"素食轻食",  desc:"豆腐+毛豆+玉米 ≈ 19g蛋白", items:[["tofu",100],["edamame",80],["corn",100]] },
+  { id:"t1", em:"🌅", name:"增肌早餐",  desc:"鸡蛋+牛奶+燕麦 ≈ 26g蛋白", items:[["egg",100],["milk",250],["oat",40]] },
+  { id:"t2", em:"💪", name:"练后加餐",  desc:"蛋白粉+香蕉 ≈ 25g蛋白",   items:[["whey",30],["banana",100]] },
+  { id:"t3", em:"🥩", name:"高蛋白正餐",desc:"鸡胸+米饭+西兰花 ≈ 43g蛋白", items:[["chicken",150],["rice",150],["brocoli",150]] },
+  { id:"t4", em:"🥬", name:"素食轻食",  desc:"豆腐+毛豆+玉米 ≈ 22g蛋白", items:[["tofu",100],["edamame",80],["corn",100]] },
 ];
 
 /* ================= 存储 ================= */
@@ -154,8 +154,12 @@ function dayLog(iso) {
   if (!state.logs[iso]) state.logs[iso] = [];
   return state.logs[iso];
 }
+// 单条记录实际蛋白质克数：优先取手动覆盖值（pOverride），否则按 p100×克数计算
+function proteinOf(e) {
+  return (e.pOverride !== undefined && e.pOverride !== null) ? e.pOverride : e.p100 * e.grams / 100;
+}
 function consumed(iso) {
-  return dayLog(iso).reduce((s, e) => s + e.p100 * e.grams / 100, 0);
+  return dayLog(iso).reduce((s, e) => s + proteinOf(e), 0);
 }
 function allFoods() {
   return FOODS.concat(state.customFoods);
@@ -170,6 +174,9 @@ function renderDateBar() {
   $("btnBackToday").classList.toggle("show", curDate !== todayStr());
   $("logDateTag").textContent = dateLabelStr(curDate);
 }
+
+// v2.5 动效状态：仅当数值真的变化时才弹跳/放光环
+let ringLastDone = false, ringLastNum = null, ringLastPill = null;
 
 function renderRing() {
   const target = dailyTarget();
@@ -215,6 +222,27 @@ function renderRing() {
     $("mFat").textContent = fmt(fat) + "g";
   } else {
     mr.classList.remove("show");
+  }
+  // v2.5 动效：达标光环（从未达标→达标时放一次）/ 数字与状态弹跳（值变化时）
+  const wrap = $("ringBar").closest(".ring-wrap");
+  if (pct >= 1) {
+    wrap.classList.add("done");
+    if (!ringLastDone) {
+      wrap.classList.remove("halo-once"); void wrap.offsetWidth; wrap.classList.add("halo-once");
+      ringLastDone = true;
+    }
+  } else {
+    wrap.classList.remove("done"); ringLastDone = false;
+  }
+  const num = $("ringNum");
+  if (ringLastNum !== Math.round(eaten)) {
+    num.classList.remove("num-bounce"); void num.offsetWidth; num.classList.add("num-bounce");
+    ringLastNum = Math.round(eaten);
+  }
+  const pill = $("statusPill");
+  if (ringLastPill !== pill.textContent) {
+    pill.classList.remove("pill-pop"); void pill.offsetWidth; pill.classList.add("pill-pop");
+    ringLastPill = pill.textContent;
   }
 }
 
@@ -280,17 +308,22 @@ function renderLog() {
   box.innerHTML = sorted.map(m => {
     const items = log.filter(e => e.meal === m.id);
     if (!items.length) return "";
-    const sub = items.reduce((s, e) => s + e.p100 * e.grams / 100, 0);
+    const sub = items.reduce((s, e) => s + proteinOf(e), 0);
     return `<div class="meal-group" data-mg="${m.id}">
       <div class="gt">${m.em} ${m.name} · ${fmt(sub)}g 蛋白 <button class="mg-note-btn" data-mnote="${m.id}" title="餐次备注">💬</button></div>
       <div class="mg-note" id="mgn-${m.id}"></div>
       <div class="log-list">` +
       items.map(e => {
-        const pv = e.p100 * e.grams / 100;
-        return `<div class="log-item">
+        const pv = proteinOf(e);
+        return `<div class="log-item" data-uid="${e.uid}">
           <span class="em">${e.em}</span>
-          <span class="nm">${e.name} × ${e.grams}g<small>蛋白质 ${fmt(pv)}g${state.profile.macroOn ? ` · 碳水 ${fmt((e.c100 || 0) * e.grams / 100)}g · 脂肪 ${fmt((e.f100 || 0) * e.grams / 100)}g` : ""}</small></span>
-          <span class="pv">+${fmt(pv)}g</span>
+          <span class="nm">
+            <span class="editable ed-name" contenteditable="true" spellcheck="false" title="点击修改名称">${e.name}</span>
+            <span class="ed-x"> × </span>
+            <span class="editable ed-grams" contenteditable="true" spellcheck="false" title="点击修改克数">${e.grams}</span>g
+            <small>蛋白质 ${fmt(pv)}g${state.profile.macroOn ? ` · 碳水 ${fmt((e.c100 || 0) * e.grams / 100)}g · 脂肪 ${fmt((e.f100 || 0) * e.grams / 100)}g` : ""}</small>
+          </span>
+          <span class="pv">+<span class="editable ed-pv" contenteditable="true" spellcheck="false" title="点击修改蛋白质">${fmt(pv)}</span>g</span>
           <button class="ev" data-edit="${e.uid}">✏️</button>
           <button class="del" data-del="${e.uid}">✕</button>
         </div>`;
@@ -397,7 +430,7 @@ function renderStats() {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const k = todayStr(d);
-    const eaten = (state.logs[k] || []).reduce((s, e) => s + e.p100 * e.grams / 100, 0);
+    const eaten = (state.logs[k] || []).reduce((s, e) => s + proteinOf(e), 0);
     if (eaten > 0) { days++; total += eaten; if (eaten >= target) hits++; }
     const h = target > 0 ? Math.min(eaten / target, 1) * 100 : 0;
     cols.push(`<div class="col">
@@ -422,7 +455,7 @@ function renderCalendar() {
   for (let i = 0; i < lead; i++) html += `<div class="cal-cell blank"></div>`;
   for (let day = 1; day <= daysInMonth; day++) {
     const iso = y + "-" + String(m + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0");
-    const eaten = (state.logs[iso] || []).reduce((s, e) => s + e.p100 * e.grams / 100, 0);
+    const eaten = (state.logs[iso] || []).reduce((s, e) => s + proteinOf(e), 0);
     const hasRec = eaten > 0;
     const hit = hasRec && eaten >= target;
     html += `<button class="cal-cell ${iso === curDate ? "sel" : ""} ${iso === todayStr() ? "today" : ""}" data-cal="${iso}">
@@ -456,13 +489,17 @@ function renderAll() {
 function addEntry(foodId, grams, meal, iso) {
   const f = findFood(foodId);
   if (!f) return;
-  dayLog(iso || curDate).push({
+  const e = {
     uid: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     name: f.name, em: f.em, p100: f.p, c100: f.c || 0, f100: f.f || 0,
     grams, meal: meal || curMeal, veg: !!f.veg,
-  });
+  };
+  dayLog(iso || curDate).push(e);
   save();
   renderAll();
+  // v2.5：新记录高亮浮现（渲染后精确定位这条，闪烁一次）
+  const node = document.querySelector(`#logList .log-item[data-uid="${e.uid}"]`);
+  if (node) node.classList.add("fresh");
 }
 
 $("foodGrid").addEventListener("click", (ev) => {
@@ -492,13 +529,23 @@ $("tplList").addEventListener("click", (ev) => {
 $("logList").addEventListener("click", (ev) => {
   const del = ev.target.closest("[data-del]");
   if (del) {
-    const log = dayLog(curDate);
-    const idx = log.findIndex(e => e.uid === del.dataset.del);
-    if (idx >= 0) {
-      toast("已删除 " + log[idx].name + " 🗑️");
-      log.splice(idx, 1);
-      save();
-      renderAll();
+    const item = del.closest(".log-item");
+    const doRemove = () => {
+      const log = dayLog(curDate);
+      const idx = log.findIndex(e => e.uid === del.dataset.del);
+      if (idx >= 0) {
+        toast("已删除 " + log[idx].name + " 🗑️");
+        log.splice(idx, 1);
+        save();
+        renderAll();
+      }
+    };
+    // v2.5：先播淡出滑走动画，再真正删除
+    if (item && !item.classList.contains("leaving")) {
+      item.classList.add("leaving");
+      setTimeout(doRemove, 240);
+    } else {
+      doRemove();
     }
     return;
   }
@@ -798,7 +845,7 @@ $("btnEntrySave").addEventListener("click", () => {
   if (e) {
     const g = Number($("entryGrams").value);
     if (!(g >= 1 && g <= 2000)) { toast("克数要填 1~2000 之间"); return; }
-    e.grams = g;
+    if (g !== e.grams) { e.grams = g; delete e.pOverride; } // 克数变了，蛋白按新克数重新计算
     e.meal = entryMeal;
     save();
     renderAll();
@@ -857,7 +904,7 @@ function renderMealProgress() {
   const target = dailyTarget();
   MEALS.forEach(m => {
     const sub = dayLog(curDate).filter(e => e.meal === m.id)
-      .reduce((s, e) => s + e.p100 * e.grams / 100, 0);
+      .reduce((s, e) => s + proteinOf(e), 0);
     const goal = Math.round(target * MEAL_SPLIT[m.id]);
     $("mpv-" + m.id).textContent = Math.round(sub) + "/" + goal + "g";
     const fill = $("mpf-" + m.id);
@@ -872,8 +919,9 @@ function renderWater() {
   const el = $("waterLine");
   if (!state.profile) { el.classList.remove("show"); return; }
   const p = consumed(curDate);
-  const ml = Math.round((state.profile.weight * 30 + p * 7) / 100) * 100;
-  el.innerHTML = `💧 高蛋白饮食记得多喝水～今日已摄入 <b>${Math.round(p)}g</b> 蛋白，建议饮水约 <b>${(ml / 1000).toFixed(1)}L</b>（按体重 30ml/kg + 蛋白代谢加成估算）`;
+  // v2.7：基础 30ml/kg + 每克蛋白质额外约10ml（每50g蛋白约+500ml，高蛋白饮食补水共识）
+  const ml = Math.round((state.profile.weight * 30 + p * 10) / 100) * 100;
+  el.innerHTML = `💧 高蛋白饮食记得多喝水～今日已摄入 <b>${Math.round(p)}g</b> 蛋白，建议饮水约 <b>${(ml / 1000).toFixed(1)}L</b>（按体重 30ml/kg + 每克蛋白约 10ml 估算）`;
   el.classList.add("show");
 }
 
@@ -952,7 +1000,7 @@ function calcStreak() {
   if (consumed(todayStr(d)) < target) d.setDate(d.getDate() - 1);
   for (let i = 0; i  < 3650; i++) {
     const iso = todayStr(d);
-    const eaten = (state.logs[iso] || []).reduce((s, e) => s + e.p100 * e.grams / 100, 0);
+    const eaten = (state.logs[iso] || []).reduce((s, e) => s + proteinOf(e), 0);
     if (eaten >= target) { streak++; d.setDate(d.getDate() - 1); }
     else break;
   }
@@ -988,11 +1036,25 @@ function applyThemeColors(bg1, bg2, primary) {
   root.setProperty("--primary-dark", darken(primary, 0.82));
 }
 /* v2.2：切换壁纸与角色装饰 */
+/* v2.6：壁纸预加载后平滑淡入；加载失败自动退回主题渐变背景，避免"背景空白" */
 function applyThemeAssets(t) {
   const body = document.body;
   if (t.wallpaper) {
     body.classList.add("has-wallpaper");
     body.style.setProperty("--wall", `url("${t.wallpaper}")`);
+    // 壁纸未加载完成前保持主题渐变；加载完成后才淡入
+    body.classList.remove("wall-ready");
+    const img = new Image();
+    img.onload = () => {
+      // 仅当仍是当前主题的壁纸时才淡入（快速切换时不串图）
+      if (body.style.getPropertyValue("--wall").includes(t.wallpaper)) body.classList.add("wall-ready");
+    };
+    img.onerror = () => {
+      // 加载失败：退回渐变背景，不显示空白/破图
+      body.classList.remove("has-wallpaper");
+      body.style.removeProperty("--wall");
+    };
+    img.src = t.wallpaper;
   } else {
     body.classList.remove("has-wallpaper");
     body.style.removeProperty("--wall");
@@ -1001,9 +1063,12 @@ function applyThemeAssets(t) {
   if (t.characterImg) {
     ch.src = t.characterImg;
     body.classList.remove("no-character");
+    // 角色图加载失败则隐藏，避免破图
+    ch.onerror = () => body.classList.add("no-character");
   } else {
     ch.src = "";
     body.classList.add("no-character");
+    ch.onerror = null;
   }
   // 喝水空状态的角色也跟随主题
   renderWaterCard();
@@ -1018,7 +1083,10 @@ function applySavedTheme() {
     document.body.classList.remove("has-wallpaper");
     document.body.classList.remove("no-character");
     const ch = $("themeCharacter");
-    if (ch) { ch.src = t.characterImg || ""; }
+    if (ch) {
+      ch.src = t.characterImg || "";
+      ch.onerror = () => document.body.classList.add("no-character");
+    }
   } else {
     const preset = themeById(t.id);
     if (preset && preset.id !== "default") {
@@ -1088,13 +1156,13 @@ function waterGoal(newVal) {
 }
 function waterToday() {
   if (!state.water) waterGoal();
-  const k = todayStr();
+  // 喝水与饮食共用“当前查看日期”：切到昨天补记，不会混进今天
   if (!state.water.logs) state.water.logs = {};
-  return state.water.logs[k] || 0;
+  return state.water.logs[curDate] || 0;
 }
 function addWater(ml) {
   waterGoal();
-  const k = todayStr();
+  const k = curDate;
   state.water.logs[k] = Math.max(0, (state.water.logs[k] || 0) + ml);
   save();
   renderWaterCard();
@@ -1106,12 +1174,19 @@ function renderWaterCard() {
   const drunk = waterToday();
   const remain = Math.max(goal - drunk, 0);
   const pct = Math.min(drunk / goal * 100, 100);
+  const isToday = curDate === todayStr();
+  // 卡片标题跟随查看日期：今天→“今日喝水”，其他→“昨天喝水/某月某日喝水”+补记标签
+  const titleEl = $("waterCardTitle");
+  if (titleEl) {
+    titleEl.innerHTML = "💧 " + (isToday ? "今日喝水" : dateLabelStr(curDate) + "喝水")
+      + (isToday ? "" : ` <span class="tag">补记</span>`);
+  }
   // 空状态：还没喝水，展示当前主题角色
   if (drunk === 0) {
     const chSrc = ($("themeCharacter") && $("themeCharacter").src) || "";
     box.innerHTML = `<div class="water-empty">
       ${chSrc ? `<img src="${chSrc}" alt="">` : `<div style="font-size:40px">💧🐱</div>`}
-      <div class="we">今天还没喝水，来一杯吧</div>
+      <div class="we">${isToday ? "今天" : dateLabelStr(curDate)}还没喝水，来一杯吧</div>
     </div>
     <div class="water-actions"><button class="water-btn" data-water="200">💧 +200ml</button></div>
     <div class="water-actions">
@@ -1135,20 +1210,402 @@ function renderWaterCard() {
       <input type="number" id="waterCustom" min="1" max="5000" placeholder="自定义毫升数" class="weight-num" style="flex:1; width:auto; color:#3D9AD1;">
       <button class="water-btn" data-water-custom style="flex:0 0 auto; padding:11px 16px;">记录</button>
     </div>
-    <div class="water-ripple">一杯约 200ml，支持手动输入任意毫升数；高蛋白日记得多喝哦</div>`;
+    <div class="water-ripple">${isToday ? "一杯约 200ml，支持手动输入任意毫升数；高蛋白日记得多喝哦" : `正在为「${dateLabelStr(curDate)}」补记喝水，不会影响今天；点顶部“回到今天”即可返回`}</div>`;
   bindWaterBtns(box);
 }
 function bindWaterBtns(box) {
   box.querySelectorAll("[data-water]").forEach(b => {
-    b.onclick = () => addWater(Number(b.dataset.water));
+    b.onclick = () => {
+      const v = Number(b.dataset.water);
+      if (v > 0) splashWater(box); // v2.5：加水时来一圈水波
+      addWater(v);
+    };
   });
   const customBtn = box.querySelector("[data-water-custom]");
   if (customBtn) {
     customBtn.onclick = () => {
       const v = Math.round(Number(box.querySelector("#waterCustom").value));
       if (!(v > 0 && v <= 5000)) { toast("请输入 1~5000 之间的毫升数"); return; }
+      splashWater(box);
       addWater(v);
       toast(`已记录喝水 ${v}ml 💧`);
     };
   }
 }
+// v2.5：喝水卡片上播一次柔和水波扩散
+function splashWater(box) {
+  const wc = box.closest(".water-card");
+  if (!wc) return;
+  wc.classList.remove("splash"); void wc.offsetWidth; wc.classList.add("splash");
+}
+
+/* ============================================================
+ * v2.3 新增：一键添加到桌面（PWA 安装）
+ * ============================================================ */
+let deferredPrompt = null;
+const isIOSDevice = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+const isStandaloneMode = () =>
+  window.matchMedia("(display-mode: standalone)").matches ||
+  window.navigator.standalone === true;
+
+function updateInstallBtn() {
+  const btn = $("btnInstall");
+  if (!btn) return;
+  // 已经以桌面应用方式运行（安装过），就不需要再提示
+  if (isStandaloneMode()) { btn.style.display = "none"; return; }
+  btn.style.display = "";
+}
+
+function askInstallPrompt() {
+  if (!deferredPrompt) return false;
+  const p = deferredPrompt;
+  const finish = (outcome) => {
+    if (outcome === "accepted") toast("已添加到桌面 🎉");
+    deferredPrompt = null;
+    updateInstallBtn();
+  };
+  p.prompt();
+  if (p.userChoice) {
+    // 标准浏览器：userChoice 返回用户选择结果
+    p.userChoice.then((choice) => finish(choice && choice.outcome)).catch(() => finish());
+  } else {
+    // 个别环境无 userChoice：默认视为已发起安装
+    finish();
+  }
+  return true;
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault(); // 阻止浏览器默认的小横幅，由我们的按钮统一触发
+  deferredPrompt = e;
+  updateInstallBtn();
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredPrompt = null;
+  updateInstallBtn();
+  toast("已安装到桌面 🎉");
+});
+
+$("btnInstall").addEventListener("click", () => {
+  if (askInstallPrompt()) return; // Chrome/Edge/Android：直接弹系统安装框
+  $("btnDoInstall").style.display = "none";
+  if (isIOSDevice()) {
+    // iOS Safari 不支持自动安装，给出引导
+    $("installBody").innerHTML =
+      `<div class="box">请用 <b>Safari 浏览器</b> 打开本页面，然后：</div>
+      <div class="box">
+        <li>1️⃣ 点击底部工具栏的 <b>分享按钮</b>（方框＋箭头 ↑）</li>
+        <li>2️⃣ 选择 <b>“添加到主屏幕”</b></li>
+        <li>3️⃣ 点击右上角 <b>“添加”</b>，桌面就会出现蛋白质小助手啦</li>
+      </div>`;
+  } else {
+    $("installBody").innerHTML =
+      `<div class="box">当前环境不支持一键安装，请手动添加到桌面：</div>
+      <div class="box">
+        <li>Chrome / Edge：点地址栏右侧的 <b>安装应用</b> 图标，或菜单 → 安装</li>
+        <li>其他浏览器：菜单里的 <b>“添加到主屏幕 / 创建快捷方式”</b></li>
+      </div>`;
+  }
+  openModal("mInstall");
+});
+
+$("btnInstallClose").addEventListener("click", () => closeModal("mInstall"));
+$("btnDoInstall").addEventListener("click", () => {
+  closeModal("mInstall");
+  askInstallPrompt();
+});
+
+// 页面加载时初始化按钮显隐（已安装过则隐藏）
+updateInstallBtn();
+
+/* ============================================================
+ * v2.4 新增：记录卡片点击直接编辑（名称 / 克数 / 蛋白质）
+ * 布局与原有样式完全不变；默认外观与原版一致，仅增加
+ * hover/编辑时的浅色反馈。数据保存到 localStorage，刷新保留。
+ * ============================================================ */
+function commitEntryEdit(ed) {
+  const item = ed.closest(".log-item");
+  if (!item) return;
+  const e = dayLog(curDate).find(x => x.uid === item.dataset.uid);
+  if (!e) return;
+  const raw = ed.textContent.trim();
+  let changed = false;
+  if (ed.classList.contains("ed-name")) {
+    if (raw && raw !== e.name) { e.name = raw.slice(0, 12); changed = true; }
+  } else if (ed.classList.contains("ed-grams")) {
+    const v = Math.round(parseFloat(raw) * 100) / 100;
+    if (v >= 1 && v <= 2000 && v !== e.grams) {
+      e.grams = v;
+      delete e.pOverride; // 克数变了，蛋白质按新克数重新计算
+      changed = true;
+    }
+  } else if (ed.classList.contains("ed-pv")) {
+    const v = Math.round(parseFloat(raw) * 10) / 10;
+    if (v >= 0 && v <= 1000 && v !== Math.round(proteinOf(e) * 10) / 10) {
+      e.pOverride = v; // 手动覆盖蛋白质克数
+      changed = true;
+    }
+  }
+  if (changed) {
+    save();
+    toast("已保存 ✏️");
+    // 延后到事件流结束后整体重渲染，避免与按钮点击竞争 DOM
+    setTimeout(renderAll, 0);
+  } else {
+    // 输入非法或无变化：还原为规范显示值
+    if (ed.classList.contains("ed-name")) ed.textContent = e.name;
+    else if (ed.classList.contains("ed-grams")) ed.textContent = e.grams;
+    else if (ed.classList.contains("ed-pv")) ed.textContent = fmt(proteinOf(e));
+  }
+}
+
+$("logList").addEventListener("focusout", (ev) => {
+  const ed = ev.target.closest(".editable");
+  if (!ed || !ed.isContentEditable) return;
+  commitEntryEdit(ed);
+});
+$("logList").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" && ev.target.isContentEditable) {
+    ev.preventDefault();
+    ev.target.blur(); // 回车即提交
+  }
+});
+
+/* ============================================================
+ * v3 新增：底部导航 / 训练打卡 / 我页（不影响原有逻辑）
+ * ============================================================ */
+
+/* ---------- Tab 切换 ---------- */
+function switchPage(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll("#tabbar .tab").forEach(t => t.classList.remove("active"));
+  const page = $("page-" + name);
+  if (page) page.classList.add("active");
+  const tab = document.querySelector('#tabbar .tab[data-page="' + name + '"]');
+  if (tab) tab.classList.add("active");
+  if (name === "train") renderTraining();
+  if (name === "me") renderBodyForm();
+  window.scrollTo({ top: 0 });
+}
+$("tabbar").addEventListener("click", (ev) => {
+  const t = ev.target.closest(".tab");
+  if (!t) return;
+  switchPage(t.dataset.page);
+});
+$("btnTrainBackToday").addEventListener("click", () => {
+  curDate = todayStr();
+  renderAll();
+  renderTraining();
+  toast("回到今天 🏠");
+});
+
+/* ---------- 动作库（仅名称 + 本地示范 GIF） ---------- */
+const EXLIB = [
+  { cat: "🫁 胸部", items: [
+    { id: "bench-press", name: "平板杠铃卧推", gif: "assets/exercise-videos/bench-press.gif" },
+    { id: "incline-db",  name: "上斜哑铃卧推", gif: "assets/exercise-videos/incline-db.gif" },
+    { id: "pec-deck",    name: "蝴蝶机夹胸",   gif: "assets/exercise-videos/pec-deck.gif" },
+  ]},
+  { cat: "🪽 背部", items: [
+    { id: "pulldown",    name: "高位下拉",     gif: "assets/exercise-videos/pulldown.gif" },
+    { id: "cable-row",   name: "坐姿绳索划船", gif: "assets/exercise-videos/cable-row.gif" },
+    { id: "db-row",      name: "单臂哑铃划船", gif: "assets/exercise-videos/db-row.gif" },
+    { id: "straight-arm",name: "直臂下压",     gif: "assets/exercise-videos/straight-arm.gif" },
+  ]},
+  { cat: "🎛 肩部", items: [
+    { id: "db-press",  name: "坐姿哑铃推肩",   gif: "assets/exercise-videos/db-press.gif" },
+    { id: "lat-raise", name: "哑铃侧平举",     gif: "assets/exercise-videos/lat-raise.gif" },
+    { id: "rev-fly",   name: "俯身反向飞鸟",   gif: "assets/exercise-videos/rev-fly.gif" },
+    { id: "face-pull", name: "绳索面拉",       gif: "assets/exercise-videos/face-pull.gif" },
+  ]},
+  { cat: "💥 肱三头肌", items: [
+    { id: "rope-pushdown", name: "绳索三头下压",   gif: "assets/exercise-videos/rope-pushdown.gif" },
+    { id: "oh-tri",        name: "哑铃颈后臂屈伸", gif: "assets/exercise-videos/oh-tri.gif" },
+    { id: "skull",         name: "仰卧臂屈伸",     gif: "assets/exercise-videos/skull.gif" },
+  ]},
+  { cat: "💪 肱二头肌", items: [
+    { id: "bb-curl",  name: "杠铃弯举",     gif: "assets/exercise-videos/bb-curl.gif" },
+    { id: "hammer",   name: "锤式弯举",     gif: "assets/exercise-videos/hammer.gif" },
+    { id: "preacher", name: "牧师凳弯举",   gif: "assets/exercise-videos/preacher.gif" },
+  ]},
+  { cat: "🦵 腿部", items: [
+    { id: "squat",    name: "杠铃深蹲",     gif: "assets/exercise-videos/squat.gif" },
+    { id: "leg-press",name: "腿举",         gif: "assets/exercise-videos/leg-press.gif" },
+    { id: "leg-ext",  name: "坐姿腿屈伸",   gif: "assets/exercise-videos/leg-ext.gif" },
+    { id: "leg-curl", name: "俯卧腿弯举",   gif: "assets/exercise-videos/leg-curl.gif" },
+    { id: "calf",     name: "站姿提踵",     gif: "assets/exercise-videos/calf.gif" },
+  ]},
+  { cat: "🏃 有氧 / 休息", items: [
+    { id: "jog",       name: "慢跑",   gif: "" },
+    { id: "incline",   name: "爬坡",   gif: "" },
+    { id: "jump-rope", name: "跳绳",   gif: "assets/exercise-videos/jump-rope.gif" },
+    { id: "rest",      name: "休息日", gif: "" },
+  ]},
+];
+const EXMAP = {};
+EXLIB.forEach(c => c.items.forEach(x => { EXMAP[x.id] = x; }));
+
+/* ---------- 训练数据（按日期独立存储） ---------- */
+function trainDay(iso) {
+  if (!state.training) state.training = {};
+  if (!state.training[iso]) state.training[iso] = {};
+  return state.training[iso];
+}
+function trainEntry(iso, exId) {
+  const d = trainDay(iso);
+  if (!d[exId]) d[exId] = { sets: [], done: false };
+  return d[exId];
+}
+function exIsDone(iso, exId) {
+  const e = trainDay(iso)[exId];
+  if (!e) return false;
+  return e.done || (e.sets.length > 0 && e.sets.every(s => s.done));
+}
+let openEx = null;
+function renderTraining() {
+  $("trainDateLabel").textContent = "📅 " + dateLabelStr(curDate);
+  $("btnTrainBackToday").classList.toggle("show", curDate !== todayStr());
+  const day = trainDay(curDate);
+  // 概览
+  const usedIds = Object.keys(day).filter(id => day[id].sets.length || day[id].done);
+  const parts = [...new Set(usedIds.map(id => EXMAP[id] ? EXMAP[id].cat : null).filter(Boolean))];
+  const doneCnt = usedIds.filter(id => exIsDone(curDate, id)).length;
+  $("trainOverview").innerHTML = `
+    <div class="stat-box"><div class="sv">${parts.length}</div><div class="sl">训练部位</div></div>
+    <div class="stat-box"><div class="sv">${usedIds.length}</div><div class="sl">动作总数</div></div>
+    <div class="stat-box hit"><div class="sv">${doneCnt}/${usedIds.length}</div><div class="sl">已完成</div></div>`;
+  // 列表
+  $("exList").innerHTML = EXLIB.map(c => {
+    const rows = c.items.map(x => {
+      const e = day[x.id] || { sets: [], done: false };
+      const open = openEx === x.id;
+      const done = exIsDone(curDate, x.id);
+      const setsHtml = !open ? "" : `
+        <div class="ex-detail">
+          ${e.sets.map((s, i) => `
+            <div class="set-row">
+              <button class="set-check ${s.done ? "on" : ""}" data-setcheck="${x.id}" data-idx="${i}" title="完成此组">${s.done ? "✓" : i + 1}</button>
+              <input class="set-in" type="number" min="0" max="1000" step="0.5" placeholder="重量" value="${s.w}" data-setin="${x.id}" data-idx="${i}" data-field="w">
+              <span class="set-lb">kg ×</span>
+              <input class="set-in" type="number" min="0" max="999" step="1" placeholder="次数" value="${s.r}" data-setin="${x.id}" data-idx="${i}" data-field="r">
+              <span class="set-lb">次</span>
+              <button class="set-del" data-setdel="${x.id}" data-idx="${i}">✕</button>
+            </div>`).join("")}
+          ${e.sets.length ? "" : `<div class="empty" style="padding:8px 0">还没加组，点下面「＋加一组」开始吧</div>`}
+          <div class="ex-actions">
+            <button class="soft-btn blue" data-addset="${x.id}">＋ 加一组</button>
+            <button class="soft-btn" data-clearsets="${x.id}">清空</button>
+            <button class="soft-btn ${e.done ? "red" : ""}" data-doneall="${x.id}">${e.done ? "取消打卡" : "整个动作完成 ✓"}</button>
+          </div>
+        </div>`;
+      return `<div class="ex-row ${done ? "done" : ""}">
+        <div class="ex-head" data-extoggle="${x.id}">
+          <span class="nm">${x.name}</span>
+          ${e.sets.length ? `<span class="cnt">${e.sets.filter(s => s.done).length}/${e.sets.length}组</span>` : ""}
+          ${x.gif ? `<button class="video-btn" data-video="${x.id}">▶ 示范</button>` : ""}
+        </div>
+        ${setsHtml}
+      </div>`;
+    }).join("");
+    return `<div class="ex-cat">${c.cat}</div>${rows}`;
+  }).join("");
+}
+$("exList").addEventListener("click", (ev) => {
+  const vbtn = ev.target.closest("[data-video]");
+  if (vbtn) { openVideo(vbtn.dataset.video); return; }
+  const chk = ev.target.closest("[data-setcheck]");
+  if (chk) {
+    const e = trainEntry(curDate, chk.dataset.setcheck);
+    e.sets[Number(chk.dataset.idx)].done = !e.sets[Number(chk.dataset.idx)].done;
+    save(); renderTraining(); return;
+  }
+  const del = ev.target.closest("[data-setdel]");
+  if (del) {
+    const e = trainEntry(curDate, del.dataset.setdel);
+    e.sets.splice(Number(del.dataset.idx), 1);
+    save(); renderTraining(); return;
+  }
+  const add = ev.target.closest("[data-addset]");
+  if (add) {
+    trainEntry(curDate, add.dataset.addset).sets.push({ w: "", r: "", done: false });
+    save(); renderTraining(); return;
+  }
+  const clr = ev.target.closest("[data-clearsets]");
+  if (clr) {
+    const e = trainEntry(curDate, clr.dataset.clearsets);
+    if (e.sets.length && confirm("清空这个动作的所有组？")) { e.sets = []; save(); renderTraining(); }
+    return;
+  }
+  const da = ev.target.closest("[data-doneall]");
+  if (da) {
+    const e = trainEntry(curDate, da.dataset.doneall);
+    e.done = !e.done;
+    e.sets.forEach(s => s.done = e.done); // 完成时全勾；取消时同步取消所有组的勾
+    save(); renderTraining();
+    toast(e.done ? "动作完成，干得漂亮！💪" : "已取消打卡");
+    return;
+  }
+  const head = ev.target.closest("[data-extoggle]");
+  if (head) {
+    openEx = openEx === head.dataset.extoggle ? null : head.dataset.extoggle;
+    renderTraining();
+  }
+});
+$("exList").addEventListener("input", (ev) => {
+  const inp = ev.target.closest("[data-setin]");
+  if (!inp) return;
+  const e = trainEntry(curDate, inp.dataset.setin);
+  const s = e.sets[Number(inp.dataset.idx)];
+  if (!s) return;
+  s[inp.dataset.field] = inp.value;
+  save();
+});
+function openVideo(exId) {
+  const x = EXMAP[exId];
+  if (!x || !x.gif) return;
+  $("videoTitle").textContent = "🎬 " + x.name;
+  $("videoImg").src = x.gif;
+  openModal("mVideo");
+}
+$("btnVideoClose").addEventListener("click", () => closeModal("mVideo"));
+
+/* ---------- 我页：身体数据 ---------- */
+function renderBodyForm() {
+  const b = state.body || {};
+  $("bdHeight").value = b.height || "";
+  $("bdWeight").value = b.weight || "";
+  $("bdFat").value = b.fat || "";
+  $("bdAge").value = b.age || "";
+  $("bdGender").value = b.gender || "";
+  echoBMI();
+}
+function echoBMI() {
+  const h = Number($("bdHeight").value), w = Number($("bdWeight").value);
+  if (h > 0 && w > 0) {
+    const bmi = w / ((h / 100) * (h / 100));
+    let tag = "标准 🎯";
+    if (bmi < 18.5) tag = "偏瘦 🌱";
+    else if (bmi >= 24) tag = bmi >= 28 ? "偏胖 🍔" : "微胖 🤔";
+    $("bmiEcho").innerHTML = `BMI = <b style="color:var(--primary-dark)">${bmi.toFixed(1)}</b>（${tag}）`;
+  } else {
+    $("bmiEcho").textContent = "身高体重都填了会自动算 BMI 哦";
+  }
+}
+["bdHeight", "bdWeight"].forEach(id => $(id).addEventListener("input", echoBMI));
+$("btnBodySave").addEventListener("click", () => {
+  const num = (id, lo, hi) => {
+    const v = Number($(id).value);
+    return (v >= lo && v <= hi) ? v : null;
+  };
+  state.body = {
+    height: num("bdHeight", 80, 250),
+    weight: num("bdWeight", 25, 250),
+    fat: num("bdFat", 2, 60),
+    age: num("bdAge", 10, 100),
+    gender: $("bdGender").value || null,
+  };
+  save();
+  toast("身体数据已保存 📏");
+});
+/* 我页的 btnTheme / btnInstall / btnProfile 按钮沿用 app.js 原有 id 处理器，无需重复绑定 */

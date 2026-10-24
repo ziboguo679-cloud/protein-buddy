@@ -28,7 +28,7 @@
     font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
     background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 100%);
     color:var(--ink); display:flex; justify-content:center;
-    padding:14px 12px 60px; min-height:100vh;
+    padding:14px 12px calc(86px + env(safe-area-inset-bottom, 0px)); min-height:100vh;
   }
   #app { width:100%; max-width:480px; }
   button { font-family:inherit; }
@@ -376,15 +376,19 @@
 
   /* ===== v2.2 喝水模块 + 主题壁纸/角色 ===== */
   /* 壁纸用独立 fixed 图层：移动端 background-attachment:fixed 会导致模糊/跳动/错误缩放 */
+  /* v2.6：壁纸默认透明，加载完成后淡入（wall-ready），加载失败则保持渐变背景 */
   #wallpaperLayer {
     position: fixed; inset: 0; z-index: -1;
     background-position: center top;
     background-size: cover;
     background-repeat: no-repeat;
     display: none;
+    opacity: 0;
+    transition: opacity .45s ease;
     transform: translateZ(0); /* 独立合成层，滚动时不重绘不跳动 */
   }
   body.has-wallpaper #wallpaperLayer { display: block; background-image: var(--wall); }
+  body.wall-ready #wallpaperLayer { opacity: 1; }
   .water-card { position: relative; overflow: hidden; }
   .water-top { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
   .water-top .wv { font-size:22px; font-weight:800; color:#3D9AD1; }
@@ -412,8 +416,203 @@
   #themeCharacter { display:block; margin:2px auto 6px; width:130px; pointer-events:none; }
   body.no-character #themeCharacter { display:none; }
 
+  /* ===== v2.4 记录卡片可点击编辑（默认外观不变，仅交互反馈） ===== */
+  .log-item .editable {
+    outline:none; cursor:text; border-radius:5px;
+    padding:0 3px; margin:0 -3px; white-space:nowrap;
+    transition:background .15s, box-shadow .15s;
+  }
+  .log-item .editable:hover { background:rgba(255,159,67,.10); }
+  .log-item .editable:focus { background:rgba(255,159,67,.12); box-shadow:0 0 0 2px rgba(255,159,67,.22); }
+  .log-item .ed-x { white-space:nowrap; }
+
+  /* ===== v2.5 UI 动效增强（仅动效，不改任何布局/配色/阴影默认值） ===== */
+  /* 尊重系统“减少动态效果”偏好 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation:none !important; transition:none !important; }
+  }
+
+  /* 1) 页面开场：标题栏下滑 + 卡片逐个上浮淡入 */
+  @keyframes headerDrop { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:translateY(0); } }
+  header { animation:headerDrop .5s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes cardIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  #app > section { animation:cardIn .55s cubic-bezier(.22,1,.36,1) both; }
+  #app > section:nth-of-type(1) { animation-delay:.03s; }
+  #app > section:nth-of-type(2) { animation-delay:.08s; }
+  #app > section:nth-of-type(3) { animation-delay:.13s; }
+  #app > section:nth-of-type(4) { animation-delay:.18s; }
+  #app > section:nth-of-type(5) { animation-delay:.23s; }
+  #app > section:nth-of-type(6) { animation-delay:.28s; }
+  #app > section:nth-of-type(7) { animation-delay:.33s; }
+  #app > section:nth-of-type(8) { animation-delay:.38s; }
+
+  /* 2) 进度环：达标后一次性光环扩散 + 数字/状态弹跳 */
+  @keyframes halo { 0% { box-shadow:0 0 0 0 rgba(46,213,115,.45); } 100% { box-shadow:0 0 0 18px rgba(46,213,115,0); } }
+  .ring-wrap.done.halo-once { border-radius:50%; animation:halo .9s ease-out 1; }
+  @keyframes numPop { 0% { transform:scale(1); } 40% { transform:scale(1.28); } 100% { transform:scale(1); } }
+  .num-bounce { display:inline-block; animation:numPop .38s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pillPop { 0% { transform:scale(1); } 50% { transform:scale(1.14); } 100% { transform:scale(1); } }
+  .pill-pop { display:inline-block; animation:pillPop .34s cubic-bezier(.34,1.56,.64,1); }
+
+  /* 3) 食物按钮：hover 轻轻上浮 + 弹性过渡（默认外观不变） */
+  .food-btn {
+    transition:transform .22s cubic-bezier(.34,1.56,.64,1), border-color .2s, box-shadow .2s, background .2s;
+  }
+  .food-btn:hover { transform:translateY(-3px); box-shadow:0 8px 18px rgba(255,159,67,.20); }
+  .food-btn:active { transform:scale(.9); }
+  .food-add { transition:transform .2s cubic-bezier(.34,1.56,.64,1), border-color .2s, box-shadow .2s; }
+  .food-add:hover { transform:translateY(-2px); border-color:var(--teal); box-shadow:0 6px 14px rgba(38,208,206,.16); }
+
+  /* 4) 记录条目：新记录高亮浮现 / 删除淡出滑走 */
+  @keyframes freshGlow {
+    0%   { background:#FFE7C9; transform:scale(.94); }
+    55%  { background:#FFDDB2; }
+    100% { background:#FFF9F0; transform:scale(1); }
+  }
+  .log-item.fresh { animation:freshGlow .9s ease; }
+  @keyframes leaveItem { to { opacity:0; transform:translateX(34px) scale(.9); } }
+  .log-item.leaving { animation:leaveItem .24s ease forwards; }
+
+  /* 5) 喝水：每次记录一次柔和的水波扩散 */
+  .water-card::after {
+    content:""; position:absolute; left:50%; top:45%; width:30px; height:30px; margin:-15px 0 0 -15px;
+    border-radius:50%; background:radial-gradient(circle, rgba(61,154,209,.35) 0%, rgba(61,154,209,0) 70%);
+    opacity:0; transform:scale(.2); pointer-events:none; z-index:1;
+  }
+  @keyframes splashAnim {
+    0%   { opacity:0; transform:scale(.2); }
+    25%  { opacity:1; }
+    100% { opacity:0; transform:scale(13); }
+  }
+  .water-card.splash::after { animation:splashAnim .6s ease-out; }
+
+  /* 6) 主题角色 / 空状态角色：保持静态显示（不添加漂浮动画，原样展示） */
+
+  /* 7) 顶栏图标：hover 轻微摆动 */
+  @keyframes wiggle { 0%,100% { transform:rotate(0); } 25% { transform:rotate(-8deg); } 75% { transform:rotate(8deg); } }
+  .hbtns .icon-btn:hover { animation:wiggle .45s ease; }
+
+  /* 8) 主按钮：hover 上浮（按下仍下沉） */
+  .save-btn { transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s; }
+  .save-btn:hover { transform:translateY(-2px); box-shadow:0 6px 0 var(--primary-dark); }
+  .soft-btn { transition:transform .16s cubic-bezier(.34,1.56,.64,1); }
+  .soft-btn:hover { transform:translateY(-1px); }
+
+  /* 9) 选中态弹跳：目标按钮 / 分类 / 份数 / 餐次 / 日历选中 */
+  @keyframes popSel { 0% { transform:scale(.9); } 55% { transform:scale(1.1); } 100% { transform:scale(1); } }
+  .goal-btn.active { animation:popSel .3s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes chipPop { 0% { transform:scale(.9); } 55% { transform:scale(1.12); } 100% { transform:scale(1.05); } }
+  .cat-chip.active { animation:chipPop .3s cubic-bezier(.34,1.56,.64,1); }
+  .mult-chip.active, .meal-tab.active, .cal-cell.sel { animation:popSel .3s cubic-bezier(.34,1.56,.64,1); }
+
+  /* 10) 餐次进度条：数值变化时平滑弹性过渡 */
+  .mp-fill { transition:width .5s cubic-bezier(.22,1,.36,1); }
+
+  /* ===== v3 底部导航 / 训练页 / 我页 / 深色模式 ===== */
+  .page { display:none; }
+  .page.active { display:block; animation:pageIn .25s ease; }
+  @keyframes pageIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+  #tabbar {
+    position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex;
+    background:rgba(255,255,255,.72);
+    backdrop-filter:blur(20px) saturate(1.8); -webkit-backdrop-filter:blur(20px) saturate(1.8);
+    border-top:1px solid rgba(0,0,0,.08);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  #tabbar .tab {
+    flex:1; border:none; background:none; cursor:pointer; font-family:inherit;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    padding:9px 0 7px; font-size:11px; font-weight:700; color:#A9A49B; transition:color .2s;
+  }
+  #tabbar .tab svg { width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  #tabbar .tab.active { color:var(--primary); }
+
+  /* 训练页 */
+  .ov-part { font-size:12px; font-weight:800; line-height:1.35; padding:8px 4px; }
+  .ex-cat { font-size:13px; font-weight:800; margin:12px 0 6px; }
+  .ex-cat:first-child { margin-top:0; }
+  .ex-row { background:#FFF9F0; border-radius:16px; margin-bottom:7px; overflow:hidden; transition:opacity .2s; }
+  .ex-row.done { opacity:.55; }
+  .ex-head { display:flex; align-items:center; gap:8px; padding:10px 12px; cursor:pointer; }
+  .ex-head .nm { flex:1; font-size:13.5px; font-weight:700; }
+  .ex-row.done .ex-head .nm { color:var(--ink-light); text-decoration:line-through; }
+  .ex-head .cnt { font-size:11px; color:var(--teal); font-weight:800; white-space:nowrap; }
+  .video-btn {
+    border:1.5px solid var(--teal); color:var(--teal); background:transparent;
+    border-radius:999px; font-size:10px; font-weight:700; padding:3px 9px; cursor:pointer; white-space:nowrap;
+  }
+  .ex-detail { padding:4px 12px 12px; border-top:1px dashed #EFE7D8; }
+  .set-row { display:flex; align-items:center; gap:7px; margin-top:8px; }
+  .set-check {
+    width:30px; height:30px; border-radius:10px; border:none; cursor:pointer;
+    background:#E8E2D5; color:#fff; font-size:14px; font-weight:800; flex-shrink:0; transition:background .15s;
+  }
+  .set-check.on { background:var(--green); }
+  .set-in {
+    width:100%; border:2px solid #F0E9DC; border-radius:10px; padding:7px 4px; text-align:center;
+    font-size:13px; font-weight:800; font-family:inherit; background:#FFFDF9; color:var(--ink); outline:none; min-width:0;
+  }
+  .set-in:focus { border-color:var(--primary); }
+  .set-lb { font-size:11px; color:var(--ink-light); font-weight:700; flex-shrink:0; }
+  .set-del {
+    width:28px; height:28px; border-radius:9px; border:none; cursor:pointer;
+    background:#FFE3E3; color:var(--pink); font-weight:800; flex-shrink:0;
+  }
+  .ex-actions { display:flex; gap:8px; margin-top:10px; }
+
+  /* 我页 */
+  .me-list { display:flex; flex-direction:column; gap:9px; }
+  .me-item {
+    border:none; cursor:pointer; text-align:left; background:#FFF9F0; border-radius:16px;
+    padding:12px 14px; font-size:14px; font-weight:800; color:var(--ink); font-family:inherit;
+    display:flex; flex-direction:column; transition:transform .12s;
+  }
+  .me-item:active { transform:scale(.97); }
+  .me-item small { font-size:11px; color:var(--ink-light); font-weight:400; margin-top:2px; }
+
+  /* 视频弹窗 */
+  .video-box { text-align:center; }
+  .video-box img {
+    max-width:100%; max-height:46vh; border-radius:18px; background:#FFF9F0;
+  }
+
+  /* 深色模式（跟随系统，浅色下零影响） */
+  @media (prefers-color-scheme: dark) {
+    :root { --bg1:#26262E; --bg2:#1D1E26; --ink:#F2EFE9; --ink-light:#A8A396;
+            --shadow:0 6px 0 rgba(0,0,0,.28), 0 12px 24px rgba(0,0,0,.38); }
+    .card { background:rgba(40,41,50,.68); }
+    .ring-bg { stroke:#3A3B45; }
+    #tabbar { background:rgba(22,22,28,.74); border-top-color:rgba(255,255,255,.12); }
+    .modal { background:#2A2B33; }
+    .food-btn,.log-item,.mp-box,.stat-box,.cat-chip,.mult-chip,.meal-tab,.tpl-item,
+    .cal-cell,.theme-cell,.goal-btn,.em-pick button,.custom-food-item,.switch-row,
+    .mg-note,.note-text,.water-empty,.food-add,.ex-row,.me-item,.video-box img { background:#262732; }
+    .mp-track { background:#1E1F26; }
+    .water-track { background:#1E2A36; }
+    #waterLine { background:#15242F; color:#8FD0F5; }
+    .weight-num,.search-row input,.gram-steer input,.form-grid input,.form-grid select,
+    .set-in,#noteText,.coef-input-row input { background:#1E1F26; color:var(--ink); border-color:#3A3B45; }
+    .coef-input-row input { color:#FFD9A8; }
+    .ex-detail { border-top-color:#3A3B45; }
+    .set-check { background:#3A3B47; }
+    .set-check.on { background:var(--green); }
+    .rec-item { background:linear-gradient(120deg,#2E2F3A,#262732); }
+    .soft-btn { background:#33343F; color:var(--ink); }
+    .explain-body .box { background:#262732; }
+    .log-item .ev { background:#3A3550; } .log-item .del { background:#4A2E33; }
+    .food-btn .note { background:#3A3B45; color:var(--ink-light); }
+    .mini-btn,.back-today { background:#3A3B45; color:#FFD9A8; }
+    .theme-cell,.goal-btn { border-color:#3A3B45; }
+    .theme-cell.active { border-color:var(--primary); background:#3A3B45; }
+    .goal-btn.active { border-color:var(--primary); background:#3A3B45; }
+    .entry-meal-pick button { background:#262732; border-color:#3A3B45; }
+    .entry-meal-pick button.active { background:#3A3B45; border-color:var(--primary); }
+    .video-btn { background:transparent; }
+  }
+
   #toast {
-    position:fixed; left:50%; bottom:56px; transform:translateX(-50%) translateY(20px);
+    position:fixed; left:50%; bottom:calc(72px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%) translateY(20px);
     background:rgba(74,59,42,.92); color:#fff; font-size:13px; font-weight:600;
     padding:10px 21px; border-radius:999px; opacity:0; pointer-events:none;
     transition:all .25s; z-index:99; white-space:nowrap; max-width:92vw; overflow:hidden; text-overflow:ellipsis;
@@ -425,12 +624,11 @@
 <body>
 <div id="wallpaperLayer" aria-hidden="true"></div>
 <div id="app">
+<div id="page-diet" class="page active">
   <header>
     <div class="logo"><span>🍔</span>蛋白质小助手</div>
     <div class="hbtns">
-      <button class="icon-btn" id="btnTheme" title="主题装扮">🎨</button>
       <button class="icon-btn" id="btnHelp" title="计算说明">💡</button>
-      <button class="icon-btn" id="btnProfile" title="设置">⚙️</button>
     </div>
   </header>
 
@@ -443,7 +641,7 @@
     <div class="ring-row">
       <div class="ring-wrap">
         <svg width="124" height="124" viewBox="0 0 124 124">
-          <circle cx="62" cy="62" r="51" fill="none" stroke="#F4EFE6" stroke-width="13"/>
+          <circle class="ring-bg" cx="62" cy="62" r="51" fill="none" stroke="#F4EFE6" stroke-width="13"/>
           <circle id="ringBar" cx="62" cy="62" r="51" fill="none" stroke="#FF9F43" stroke-width="13"
                   stroke-linecap="round" stroke-dasharray="320.44" stroke-dashoffset="320.44"/>
         </svg>
@@ -473,7 +671,7 @@
 
   <!-- 喝水记录 -->
   <section class="card water-card">
-    <h2>💧 今日喝水</h2>
+    <h2 id="waterCardTitle">💧 今日喝水</h2>
     <div id="waterCard"></div>
   </section>
 
@@ -540,8 +738,70 @@
   </section>
 
   <img id="themeCharacter" src="" alt="">
+  <img id="themeCharacter" src="" alt="">
   <div class="footer">数据保存在本机浏览器 · 支持设置里导出备份 💾 · 仅供健康参考 🐣</div>
-</div>
+</div><!-- /page-diet -->
+
+<!-- ===== 训练页 ===== -->
+<div id="page-train" class="page">
+  <header>
+    <div class="logo"><span>🏋️</span>训练打卡</div>
+  </header>
+
+  <section class="card">
+    <div class="datebar">
+      <span class="d" id="trainDateLabel">📅 今天</span>
+      <button class="back-today" id="btnTrainBackToday">回到今天</button>
+    </div>
+    <div class="stat-row" id="trainOverview"></div>
+  </section>
+
+  <section class="card">
+    <h2>🏋️ 动作库 <span class="tag">点动作展开 · 自由记组数</span></h2>
+    <div id="exList"></div>
+  </section>
+
+  <div class="footer">训练数据按日期独立保存在本机 💪</div>
+</div><!-- /page-train -->
+
+<!-- ===== 我页 ===== -->
+<div id="page-me" class="page">
+  <header>
+    <div class="logo"><span>🐣</span>我的</div>
+  </header>
+
+  <section class="card">
+    <h2>📏 身体数据</h2>
+    <div class="form-grid" id="bodyForm">
+      <div class="field"><label>身高 cm</label><input type="number" id="bdHeight" min="80" max="250" step="0.5" placeholder="—"></div>
+      <div class="field"><label>体重 kg</label><input type="number" id="bdWeight" min="25" max="250" step="0.1" placeholder="—"></div>
+      <div class="field"><label>体脂率 %</label><input type="number" id="bdFat" min="2" max="60" step="0.1" placeholder="—"></div>
+      <div class="field"><label>年龄</label><input type="number" id="bdAge" min="10" max="100" step="1" placeholder="—"></div>
+      <div class="field full"><label>性别</label>
+        <select id="bdGender">
+          <option value="">未填写</option>
+          <option value="m">♂ 男</option>
+          <option value="f">♀ 女</option>
+        </select>
+      </div>
+    </div>
+    <div class="hint" id="bmiEcho">身高体重都填了会自动算 BMI 哦</div>
+    <button class="save-btn" id="btnBodySave">保存身体数据 💾</button>
+  </section>
+
+  <section class="card">
+    <h2>⚙️ 设置</h2>
+    <div class="me-list">
+      <button class="me-item" id="btnProfile">⚙️ 目标与设置<small>体重 · 蛋白目标 · 喝水目标 · 宏量 · 备份</small></button>
+      <button class="me-item" id="btnTheme">🎨 主题装扮<small>8 套卡通主题 + 自定义配色</small></button>
+      <button class="me-item" id="btnInstall">📲 添加到桌面<small>像 App 一样全屏使用</small></button>
+    </div>
+  </section>
+
+  <div class="footer">蛋白质小助手 · 数据都在本机浏览器 🐣</div>
+</div><!-- /page-me -->
+
+</div><!-- /app -->
 
 <!-- 设置弹窗 -->
 <div class="modal-mask" id="mProfile">
@@ -765,7 +1025,44 @@
   </div>
 </div>
 
+<!-- 添加到桌面引导弹窗 -->
+<div class="modal-mask" id="mInstall">
+  <div class="modal">
+    <h3>📲 添加到桌面</h3>
+    <div class="explain-body" id="installBody"></div>
+    <button class="save-btn" id="btnDoInstall" style="display:none">立即安装 ✅</button>
+    <button class="save-btn" id="btnInstallClose" style="background:#F4EFE6; color:var(--ink); box-shadow:0 4px 0 #E3DCCF;">知道了</button>
+  </div>
+</div>
+
+<!-- 视频示范弹窗 -->
+<div class="modal-mask" id="mVideo">
+  <div class="modal video-box">
+    <h3 id="videoTitle">🎬 动作示范</h3>
+    <img id="videoImg" src="" alt="动作示范图">
+    <div class="hint">示范图会循环播放标准动作轨迹</div>
+    <button class="save-btn" id="btnVideoClose" style="background:#F4EFE6; color:var(--ink); box-shadow:0 4px 0 #E3DCCF;">关闭</button>
+  </div>
+</div>
+
 <div id="toast"></div>
+
+<!-- 底部导航栏 -->
+<nav id="tabbar">
+  <button class="tab active" data-page="diet">
+    <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 9v11h5v-6h4v6h5V9"/></svg>
+    <span>饮食</span>
+  </button>
+  <button class="tab" data-page="train">
+    <svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg>
+    <span>训练</span>
+  </button>
+  <button class="tab" data-page="me">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+    <span>我</span>
+  </button>
+</nav>
+
 <script src="app.js"></script>
 </body>
 </html>
