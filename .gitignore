@@ -12,3 +12,5 @@ scrape-videos2.py
 scrape-videos3.py 
 scrape-videos4.py 
 download-videos.py 
+_chk*.py 
+_fix*.py 
