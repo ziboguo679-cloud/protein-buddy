@@ -577,39 +577,6 @@
     max-width:100%; max-height:46vh; border-radius:18px; background:#FFF9F0;
   }
 
-  /* 深色模式（跟随系统，浅色下零影响） */
-  @media (prefers-color-scheme: dark) {
-    :root { --bg1:#26262E; --bg2:#1D1E26; --ink:#F2EFE9; --ink-light:#A8A396;
-            --shadow:0 6px 0 rgba(0,0,0,.28), 0 12px 24px rgba(0,0,0,.38); }
-    .card { background:rgba(40,41,50,.68); }
-    .ring-bg { stroke:#3A3B45; }
-    #tabbar { background:rgba(22,22,28,.74); border-top-color:rgba(255,255,255,.12); }
-    .modal { background:#2A2B33; }
-    .food-btn,.log-item,.mp-box,.stat-box,.cat-chip,.mult-chip,.meal-tab,.tpl-item,
-    .cal-cell,.theme-cell,.goal-btn,.em-pick button,.custom-food-item,.switch-row,
-    .mg-note,.note-text,.water-empty,.food-add,.ex-row,.me-item,.video-box img { background:#262732; }
-    .mp-track { background:#1E1F26; }
-    .water-track { background:#1E2A36; }
-    #waterLine { background:#15242F; color:#8FD0F5; }
-    .weight-num,.search-row input,.gram-steer input,.form-grid input,.form-grid select,
-    .set-in,#noteText,.coef-input-row input { background:#1E1F26; color:var(--ink); border-color:#3A3B45; }
-    .coef-input-row input { color:#FFD9A8; }
-    .ex-detail { border-top-color:#3A3B45; }
-    .set-check { background:#3A3B47; }
-    .set-check.on { background:var(--green); }
-    .rec-item { background:linear-gradient(120deg,#2E2F3A,#262732); }
-    .soft-btn { background:#33343F; color:var(--ink); }
-    .explain-body .box { background:#262732; }
-    .log-item .ev { background:#3A3550; } .log-item .del { background:#4A2E33; }
-    .food-btn .note { background:#3A3B45; color:var(--ink-light); }
-    .mini-btn,.back-today { background:#3A3B45; color:#FFD9A8; }
-    .theme-cell,.goal-btn { border-color:#3A3B45; }
-    .theme-cell.active { border-color:var(--primary); background:#3A3B45; }
-    .goal-btn.active { border-color:var(--primary); background:#3A3B45; }
-    .entry-meal-pick button { background:#262732; border-color:#3A3B45; }
-    .entry-meal-pick button.active { background:#3A3B45; border-color:var(--primary); }
-    .video-btn { background:transparent; }
-  }
 
   #toast {
     position:fixed; left:50%; bottom:calc(72px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%) translateY(20px);
